@@ -1,0 +1,1978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>उत्तराखंड स्मार्ट रूट · Uttarakhand Smart Route Manager</title>
+    
+    <!-- TomTom SDK -->
+    <link rel='stylesheet' href='https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.25.0/maps/maps.css'>
+    <script src='https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.25.0/maps/maps-web.min.js'></script>
+    <script src='https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.25.0/services/services-web.min.js'></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { height: 100vh; overflow: hidden; background: #f0f2f5; }
+        
+        #app { display: flex; height: 100vh; }
+
+        /* Sidebar */
+        #sidebar {
+            width: 420px; background: white; display: flex; flex-direction: column;
+            border-right: 1px solid #e0e0e0; box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            z-index: 1000; position: relative;
+        }
+
+        #sidebar-header {
+            padding: 20px; background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white; border-bottom: 4px solid #f9a61a;
+        }
+
+        #sidebar-header h2 { 
+            font-size: 22px; display: flex; align-items: center; gap: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        #sidebar-header h2 i { color: #f9a61a; }
+        #sidebar-header .sub { font-size: 13px; opacity: 0.9; margin-top: 5px; }
+
+        #sidebar-content { padding: 20px; overflow-y: auto; flex: 1; }
+
+        /* Live Tracking Bar */
+        #live-tracking-bar {
+            background: #1e3c72; color: white; padding: 12px 15px;
+            border-radius: 12px; margin-bottom: 20px; display: flex;
+            align-items: center; justify-content: space-between;
+            box-shadow: 0 4px 15px rgba(30,60,114,0.3);
+            transition: all 0.3s;
+        }
+
+        #live-tracking-bar.active {
+            background: #10b981;
+            animation: pulse-green 2s infinite;
+        }
+
+        @keyframes pulse-green {
+            0% { box-shadow: 0 4px 15px rgba(16,185,129,0.3); }
+            50% { box-shadow: 0 4px 25px rgba(16,185,129,0.6); }
+            100% { box-shadow: 0 4px 15px rgba(16,185,129,0.3); }
+        }
+
+        .live-status {
+            display: flex; align-items: center; gap: 8px;
+        }
+
+        .live-dot {
+            width: 10px; height: 10px; background: #10b981;
+            border-radius: 50%; animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .track-btn {
+            background: #f9a61a; color: #1e3c72; border: none;
+            padding: 8px 16px; border-radius: 20px; font-weight: 600;
+            cursor: pointer; display: flex; align-items: center; gap: 5px;
+            transition: all 0.3s;
+        }
+
+        .track-btn:hover {
+            transform: scale(1.05); background: #fbb13c;
+        }
+
+        .track-btn.active {
+            background: #10b981; color: white;
+        }
+
+        /* Search Sections */
+        .search-section {
+            background: #f8fafc; border-radius: 12px; padding: 15px;
+            margin-bottom: 15px; border: 1px solid #e0e0e0;
+        }
+
+        .search-label {
+            font-size: 14px; font-weight: 600; color: #1e3c72;
+            margin-bottom: 10px; display: flex; align-items: center; gap: 8px;
+        }
+
+        .search-label i { color: #f9a61a; }
+
+        .search-container { position: relative; }
+
+        .search-input {
+            width: 100%; padding: 12px 15px; border: 2px solid #e0e0e0;
+            border-radius: 8px; font-size: 14px; transition: all 0.3s;
+            padding-right: 40px;
+        }
+
+        .search-input:focus {
+            outline: none; border-color: #1e3c72; box-shadow: 0 0 0 3px rgba(30,60,114,0.1);
+        }
+
+        .search-icon {
+            position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+            color: #999; pointer-events: none;
+        }
+
+        .suggestions {
+            position: absolute; top: 100%; left: 0; right: 0; background: white;
+            border: 1px solid #ddd; border-radius: 8px; margin-top: 5px;
+            max-height: 250px; overflow-y: auto; display: none; z-index: 1000;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+
+        .suggestion-item {
+            padding: 12px 15px; cursor: pointer; border-bottom: 1px solid #f0f0f0;
+            transition: background 0.2s;
+        }
+
+        .suggestion-item:hover { background: #f0f7ff; }
+        .suggestion-name { font-weight: 600; color: #1e3c72; }
+        .suggestion-address { font-size: 12px; color: #666; margin-top: 3px; }
+
+        .selected-place {
+            margin-top: 10px; padding: 10px; background: #e3f2fd;
+            border-radius: 6px; font-size: 13px; color: #1e3c72;
+            display: none; align-items: center; gap: 8px;
+            border-left: 4px solid #f9a61a;
+        }
+
+        /* Camera Heatmap Section */
+        .heatmap-section {
+            background: white; border-radius: 12px; padding: 15px;
+            margin: 20px 0; border: 1px solid #e0e0e0;
+        }
+
+        .heatmap-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .heatmap-header h3 {
+            color: #1e3c72; font-size: 18px; display: flex; align-items: center; gap: 8px;
+        }
+
+        .heatmap-header h3 i { color: #f9a61a; }
+
+        .refresh-btn {
+            background: #f9a61a; color: #1e3c72; border: none;
+            width: 36px; height: 36px; border-radius: 50%; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .refresh-btn:hover { transform: rotate(180deg); background: #fbb13c; }
+
+        /* Camera List */
+        .camera-list {
+            max-height: 300px; overflow-y: auto; padding-right: 5px;
+        }
+
+        .camera-card {
+            background: #f8fafc; border-radius: 10px; padding: 12px;
+            margin-bottom: 10px; border-left: 5px solid; cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .camera-card:hover {
+            transform: translateX(5px); box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .camera-card.low { border-left-color: #10b981; }
+        .camera-card.medium { border-left-color: #f9a61a; }
+        .camera-card.high { border-left-color: #ef4444; }
+
+        .camera-header {
+            display: flex; justify-content: space-between; margin-bottom: 8px;
+        }
+
+        .camera-name { font-weight: 600; color: #1e3c72; }
+        .camera-location { font-size: 12px; color: #666; }
+
+        .camera-stats {
+            display: flex; gap: 15px; margin: 10px 0; flex-wrap: wrap;
+        }
+
+        .stat-badge {
+            display: flex; align-items: center; gap: 5px; font-size: 13px;
+            padding: 4px 10px; background: white; border-radius: 20px;
+        }
+
+        .crowd-badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 4px 12px; border-radius: 20px; font-size: 12px;
+            font-weight: 600;
+        }
+
+        .crowd-badge.low { background: #d1fae5; color: #065f46; }
+        .crowd-badge.medium { background: #fed7aa; color: #92400e; }
+        .crowd-badge.high { background: #fee2e2; color: #991b1b; }
+
+        /* Camera Navigation Buttons */
+        .camera-nav-btn {
+            background: #1e3c72; color: white; border: none;
+            padding: 4px 8px; border-radius: 4px; font-size: 11px;
+            cursor: pointer; margin-left: 5px; transition: background 0.3s;
+        }
+
+        .camera-nav-btn:hover {
+            background: #2a5298;
+        }
+
+        /* Geofencing Button */
+        .geofence-btn {
+            width: 100%; padding: 14px; background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white; border: none; border-radius: 8px; font-size: 16px;
+            font-weight: 600; cursor: pointer; margin: 15px 0;
+            display: flex; align-items: center; justify-content: center;
+            gap: 10px; transition: all 0.3s; position: relative;
+            overflow: hidden;
+        }
+
+        .geofence-btn::before {
+            content: ''; position: absolute; top: 0; left: -100%;
+            width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .geofence-btn:hover::before { left: 100%; }
+        .geofence-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(30,60,114,0.4); }
+        .geofence-btn.active { background: linear-gradient(135deg, #10b981, #059669); }
+
+        /* Routes Container */
+        #routes-container { display: none; margin-top: 20px; }
+
+        .route-card {
+            background: white; border: 2px solid #e0e0e0; border-radius: 12px;
+            padding: 15px; margin-bottom: 15px; cursor: pointer;
+            transition: all 0.3s; position: relative;
+        }
+
+        .route-card:hover {
+            border-color: #1e3c72; transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .route-card.selected {
+            border-color: #1e3c72; background: #f0f7ff;
+        }
+
+        .route-card.suggested {
+            border-color: #10b981; background: #ecfdf5;
+            box-shadow: 0 0 0 2px #10b98133;
+        }
+
+        .suggested-badge {
+            position: absolute; top: -10px; right: 10px;
+            background: #10b981; color: white; padding: 4px 12px;
+            border-radius: 20px; font-size: 12px; font-weight: 600;
+        }
+
+        .route-header {
+            display: flex; justify-content: space-between; margin-bottom: 10px;
+        }
+
+        .route-name { font-weight: 600; color: #1e3c72; }
+        .route-distance { color: #666; }
+
+        .traffic-indicator {
+            margin-top: 10px; padding: 10px; border-radius: 8px;
+            display: flex; align-items: center; gap: 10px;
+            background: #f8fafc;
+        }
+
+        .traffic-bar {
+            height: 8px; border-radius: 4px; flex: 1;
+            background: linear-gradient(90deg, #10b981, #f9a61a, #ef4444);
+        }
+
+        .traffic-level {
+            font-size: 13px; font-weight: 600; padding: 2px 8px;
+            border-radius: 12px;
+        }
+
+        .traffic-level.low { background: #d1fae5; color: #065f46; }
+        .traffic-level.medium { background: #fed7aa; color: #92400e; }
+        .traffic-level.high { background: #fee2e2; color: #991b1b; }
+
+        /* Map Container */
+        #map-container {
+            flex: 1; position: relative; height: 100vh;
+        }
+
+        #map {
+            width: 100%; height: 100%;
+        }
+
+        /* Map Controls */
+        .map-controls {
+            position: absolute; bottom: 20px; right: 20px; z-index: 1000;
+            display: flex; flex-direction: column; gap: 10px;
+        }
+
+        .map-control-btn {
+            width: 50px; height: 50px; background: white; border: none;
+            border-radius: 50%; box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            cursor: pointer; display: flex; align-items: center;
+            justify-content: center; font-size: 20px; color: #1e3c72;
+            transition: all 0.3s;
+        }
+
+        .map-control-btn:hover {
+            background: #1e3c72; color: white; transform: scale(1.1);
+        }
+
+        /* Heatmap Legend */
+        .heatmap-legend {
+            position: absolute; bottom: 20px; left: 20px; background: white;
+            padding: 12px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 1000; font-size: 12px; min-width: 150px;
+        }
+
+        .legend-item {
+            display: flex; align-items: center; gap: 8px; margin: 5px 0;
+        }
+
+        .legend-color {
+            width: 20px; height: 20px; border-radius: 4px;
+        }
+
+        /* Loading Overlay */
+        #loading-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255,255,255,0.9); display: none;
+            justify-content: center; align-items: center; z-index: 9999;
+        }
+
+        .spinner {
+            width: 50px; height: 50px; border: 5px solid #f3f3f3;
+            border-top: 5px solid #1e3c72; border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* User Location Marker */
+        .user-location-marker {
+            width: 20px; height: 20px; background: #3b82f6;
+            border: 3px solid white; border-radius: 50%;
+            box-shadow: 0 0 20px #3b82f6; animation: pulse-blue 2s infinite;
+            z-index: 2000;
+        }
+
+        @keyframes pulse-blue {
+            0% { box-shadow: 0 0 0 0 rgba(59,130,246,0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(59,130,246,0); }
+            100% { box-shadow: 0 0 0 0 rgba(59,130,246,0); }
+        }
+
+        /* Camera Navigation Panel */
+        .camera-nav-panel {
+            position: absolute; top: 20px; right: 20px; background: white;
+            border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            padding: 15px; z-index: 1000; max-width: 300px;
+            display: none;
+        }
+
+        .camera-nav-panel.show {
+            display: block;
+            animation: slideIn 0.3s;
+        }
+
+        .camera-nav-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 10px;
+        }
+
+        .camera-nav-header h4 {
+            color: #1e3c72; font-size: 16px;
+        }
+
+        .camera-nav-list {
+            max-height: 300px; overflow-y: auto;
+        }
+
+        .camera-nav-item {
+            padding: 8px; border-bottom: 1px solid #f0f0f0;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .camera-nav-item:hover {
+            background: #f8fafc;
+        }
+
+        .camera-nav-item button {
+            background: #1e3c72; color: white; border: none;
+            padding: 4px 10px; border-radius: 4px; cursor: pointer;
+            font-size: 12px;
+        }
+
+        .camera-nav-item button:hover {
+            background: #2a5298;
+        }
+
+        /* Geofence Alert - Enhanced */
+        .geofence-alert {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white; padding: 30px 40px; border-radius: 20px;
+            box-shadow: 0 30px 80px rgba(239,68,68,0.6); z-index: 10000;
+            display: none; flex-direction: column; align-items: center; gap: 15px;
+            animation: alertPop 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            border: 3px solid white;
+            min-width: 400px;
+            text-align: center;
+        }
+
+        @keyframes alertPop {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+            80% { transform: translate(-50%, -50%) scale(1.1); }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+
+        .geofence-alert i {
+            font-size: 60px;
+            animation: alertBell 1s infinite;
+            filter: drop-shadow(0 0 10px rgba(255,255,255,0.5));
+        }
+
+        @keyframes alertBell {
+            0% { transform: rotate(0deg); }
+            10% { transform: rotate(20deg); }
+            20% { transform: rotate(-20deg); }
+            30% { transform: rotate(15deg); }
+            40% { transform: rotate(-15deg); }
+            50% { transform: rotate(10deg); }
+            60% { transform: rotate(-10deg); }
+            70% { transform: rotate(5deg); }
+            80% { transform: rotate(-5deg); }
+            90% { transform: rotate(2deg); }
+            100% { transform: rotate(0deg); }
+        }
+
+        .alert-content {
+            flex: 1;
+        }
+
+        .alert-content h4 {
+            font-size: 28px; margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .alert-content p {
+            font-size: 16px; opacity: 0.95;
+            line-height: 1.5;
+        }
+
+        .alert-close {
+            position: absolute; top: 10px; right: 10px;
+            background: rgba(255,255,255,0.2); border: none;
+            color: white; width: 30px; height: 30px;
+            border-radius: 50%; font-size: 20px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .alert-close:hover {
+            background: rgba(255,255,255,0.4);
+            transform: scale(1.1);
+        }
+
+        .alert-progress {
+            position: absolute; bottom: 0; left: 0; height: 4px;
+            background: rgba(255,255,255,0.5);
+            animation: progress 5s linear;
+        }
+
+        @keyframes progress {
+            0% { width: 100%; }
+            100% { width: 0%; }
+        }
+
+        /* Route Beam Effect */
+        .route-beam {
+            filter: drop-shadow(0 0 15px #10b981) drop-shadow(0 0 30px #10b981);
+            animation: beamPulse 2s infinite;
+        }
+
+        @keyframes beamPulse {
+            0% { filter: drop-shadow(0 0 15px #10b981) drop-shadow(0 0 30px #10b981); }
+            50% { filter: drop-shadow(0 0 25px #10b981) drop-shadow(0 0 50px #10b981); }
+            100% { filter: drop-shadow(0 0 15px #10b981) drop-shadow(0 0 30px #10b981); }
+        }
+
+        /* Current Location Button */
+        .current-location-btn {
+            position: absolute; right: 40px; top: 50%; transform: translateY(-50%);
+            background: #1e3c72; color: white; border: none;
+            width: 32px; height: 32px; border-radius: 50%;
+            cursor: pointer; display: flex; align-items: center;
+            justify-content: center; font-size: 14px; transition: all 0.3s;
+            z-index: 10;
+        }
+
+        .current-location-btn:hover {
+            background: #2a5298; transform: translateY(-50%) scale(1.1);
+        }
+
+        /* Time Display */
+        .time-display {
+            font-family: monospace;
+            font-weight: 600;
+        }
+
+        /* Custom Heat Circle Animation */
+        @keyframes heatPulse {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+            50% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+        }
+
+        .heat-circle {
+            position: absolute;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            animation: heatPulse 2.5s infinite ease-in-out;
+            pointer-events: auto;
+            cursor: pointer;
+            transition: all 0.3s;
+            z-index: 500;
+            box-shadow: 0 0 30px currentColor;
+        }
+
+        .heat-circle:hover {
+            filter: brightness(1.2);
+            transform: translate(-50%, -50%) scale(1.25);
+            z-index: 1000;
+            box-shadow: 0 0 50px currentColor;
+        }
+
+        /* Geofence Border */
+        .geofence-border {
+            stroke-dasharray: 10 10;
+            animation: dash 20s linear infinite;
+        }
+
+        @keyframes dash {
+            to {
+                stroke-dashoffset: -200;
+            }
+        }
+
+        /* Safety Zone Info */
+        .safety-zone-info {
+            position: absolute; top: 20px; left: 20px; background: white;
+            padding: 10px 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 1000; font-size: 12px; border-left: 4px solid #10b981;
+            display: none;
+        }
+
+        .safety-zone-info.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Sidebar -->
+        <div id="sidebar">
+            <div id="sidebar-header">
+                <h2>
+                    <i class="fas fa-mountain"></i>
+                    उत्तराखंड स्मार्ट रूट
+                </h2>
+                <div class="sub">Advanced Traffic · Live Tracking · Geofencing</div>
+            </div>
+
+            <div id="sidebar-content">
+                <!-- Live Tracking Bar -->
+                <div id="live-tracking-bar">
+                    <div class="live-status">
+                        <span class="live-dot"></span>
+                        <span id="tracking-status">लाइव ट्रैकिंग बंद</span>
+                    </div>
+                    <button id="toggle-tracking" class="track-btn">
+                        <i class="fas fa-play"></i> शुरू करें
+                    </button>
+                </div>
+
+                <!-- Origin Search -->
+                <div class="search-section">
+                    <div class="search-label">
+                        <i class="fas fa-circle"></i> प्रारंभ बिंदु
+                    </div>
+                    <div class="search-container">
+                        <input type="text" id="origin-search" class="search-input" placeholder="शुरुआती स्थान खोजें...">
+                        <i class="fas fa-search search-icon"></i>
+                        <button class="current-location-btn" id="use-current-origin" title="मेरी वर्तमान लोकेशन का उपयोग करें">
+                            <i class="fas fa-location-arrow"></i>
+                        </button>
+                        <div id="origin-suggestions" class="suggestions"></div>
+                    </div>
+                    <div id="origin-selected" class="selected-place">
+                        <i class="fas fa-check-circle" style="color:#10b981;"></i>
+                        <span id="origin-name"></span>
+                    </div>
+                </div>
+
+                <!-- Destination Search -->
+                <div class="search-section">
+                    <div class="search-label">
+                        <i class="fas fa-flag-checkered"></i> गंतव्य स्थान
+                    </div>
+                    <div class="search-container">
+                        <input type="text" id="destination-search" class="search-input" placeholder="गंतव्य स्थान खोजें...">
+                        <i class="fas fa-search search-icon"></i>
+                        <div id="destination-suggestions" class="suggestions"></div>
+                    </div>
+                    <div id="destination-selected" class="selected-place">
+                        <i class="fas fa-check-circle" style="color:#10b981;"></i>
+                        <span id="destination-name"></span>
+                    </div>
+                </div>
+
+                <!-- Camera Heatmap Section -->
+                <div class="heatmap-section">
+                    <div class="heatmap-header">
+                        <h3>
+                            <i class="fas fa-fire"></i>
+                            लाइव क्राउड हीटमैप
+                        </h3>
+                        <button class="refresh-btn" id="refreshCameras">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+
+                    <!-- Camera List with Navigation Buttons -->
+                    <div id="cameraList" class="camera-list">
+                        <div style="text-align:center; padding:20px; color:#666;">
+                            <i class="fas fa-spinner fa-spin"></i> डेटा लोड हो रहा...
+                        </div>
+                    </div>
+                    
+                    <!-- Direct Camera Navigation Button -->
+                    <button id="show-camera-nav" class="geofence-btn" style="background: #f9a61a; margin-top: 10px;">
+                        <i class="fas fa-camera"></i>
+                        सभी स्थान देखें
+                    </button>
+                </div>
+
+                <!-- Geofencing Button -->
+                <button id="geofence-btn" class="geofence-btn">
+                    <i class="fas fa-shield-alt"></i>
+                    जियोफेंसिंग सुरक्षा सक्रिय करें
+                </button>
+
+                <!-- Find Routes Button -->
+                <button id="find-routes" class="geofence-btn" style="background: #f9a61a; margin-top: 0;" disabled>
+                    <i class="fas fa-route"></i>
+                    ट्रैफिक के साथ रास्ते खोजें
+                </button>
+
+                <!-- Routes Container -->
+                <div id="routes-container">
+                    <h3 style="margin-bottom:15px; color:#1e3c72; display:flex; align-items:center; gap:8px;">
+                        <i class="fas fa-map-signs"></i>
+                        उपलब्ध रास्ते
+                    </h3>
+                    <div id="routes-list"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Map Container -->
+        <div id="map-container">
+            <div id="map"></div>
+            
+            <!-- Map Controls -->
+            <div class="map-controls">
+                <button class="map-control-btn" id="my-location" title="मेरी लोकेशन">
+                    <i class="fas fa-location-arrow"></i>
+                </button>
+                <button class="map-control-btn" id="zoom-in" title="ज़ूम इन">
+                    <i class="fas fa-plus"></i>
+                </button>
+                <button class="map-control-btn" id="zoom-out" title="ज़ूम आउट">
+                    <i class="fas fa-minus"></i>
+                </button>
+            </div>
+
+            <!-- Heatmap Legend -->
+            <div class="heatmap-legend">
+                <div style="font-weight:600; margin-bottom:8px;">भीड़ स्तर</div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background:#10b981;"></div>
+                    <span>सामान्य (0-50)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background:#f9a61a;"></div>
+                    <span>मध्यम (50-100)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background:#ef4444;"></div>
+                    <span>अधिक (100+)</span>
+                </div>
+            </div>
+
+            <!-- Safety Zone Info -->
+            <div id="safety-zone-info" class="safety-zone-info">
+                <i class="fas fa-shield-alt" style="color:#10b981;"></i>
+                <span>सुरक्षित क्षेत्र के अंदर हैं</span>
+            </div>
+
+            <!-- Camera Navigation Panel -->
+            <div id="camera-nav-panel" class="camera-nav-panel">
+                <div class="camera-nav-header">
+                    <h4><i class="fas fa-map-marker-alt"></i> सभी स्थान</h4>
+                    <button onclick="document.getElementById('camera-nav-panel').classList.remove('show')" style="background:none; border:none; font-size:18px; cursor:pointer;">×</button>
+                </div>
+                <div id="camera-nav-list" class="camera-nav-list">
+                    <!-- Camera list will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Geofence Alert -->
+    <div id="geofence-alert" class="geofence-alert">
+        <i class="fas fa-exclamation-triangle"></i>
+        <div class="alert-content">
+            <h4>⚠️ जियोफेंस अलर्ट</h4>
+            <p id="alert-message">आप सुरक्षित क्षेत्र से बाहर हैं!</p>
+            <p style="font-size:14px; margin-top:10px;">तुरंत वापस लौटें या सहायता लें</p>
+        </div>
+        <button class="alert-close" onclick="document.getElementById('geofence-alert').style.display='none'">×</button>
+        <div class="alert-progress"></div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+
+    <script>
+        // Configuration
+        const TOMTOM_API_KEY = 'W76HtKmRPNwRMUX8lRVvYOt2efXtzL2g';
+        const API_BASE_URL = 'http://localhost:5000/api/crowd';
+
+        // Global variables
+        let map;
+        let ttServices;
+        let origin = null;
+        let destination = null;
+        let routes = [];
+        let selectedRouteIndex = 0;
+        let cameraMarkers = [];
+        let cameraData = [];
+        let userMarker = null;
+        let watchId = null;
+        let isTracking = false;
+        let geofenceActive = false;
+        let geofencePolygon = null;
+        let geofenceBorder = null;
+        let refreshInterval;
+        let routeLayers = [];
+        let lastKnownPosition = null;
+        let insideGeofence = true;
+
+        // Camera coordinates database - Exact locations in Uttarakhand
+        const cameraCoordinates = {
+            'rishikesh': [78.2673, 30.0869],
+            'haridwar': [78.1633, 29.9457],
+            'kedarnath': [79.0669, 30.7346],
+            'badrinath': [79.4937, 30.7433],
+            'chopta': [79.3165, 30.4865],
+            'mussoorie': [78.0644, 30.4598],
+            'nainital': [79.4542, 29.3919],
+            'auli': [79.6061, 30.5294],
+            'dehradun': [78.0322, 30.3165],
+            'pantnagar': [79.4833, 29.0333],
+            'gangotri': [78.9397, 30.9944],
+            'yamunotri': [78.4636, 31.0167]
+        };
+
+        // Initialize map
+        function initMap() {
+            map = tt.map({
+                key: TOMTOM_API_KEY,
+                container: 'map',
+                center: [78.0322, 30.3165], // Dehradun center
+                zoom: 8,
+                stylesVisibility: {
+                    trafficIncidents: true,
+                    trafficFlow: true
+                }
+            });
+
+            map.addControl(new tt.FullscreenControl());
+            map.addControl(new tt.NavigationControl());
+
+            // Initialize services
+            ttServices = tt.services;
+
+            // Wait for map to load
+            map.on('load', () => {
+                console.log('Map loaded successfully');
+                // Add traffic flow layer
+                try {
+                    map.addLayer({
+                        id: 'traffic-flow',
+                        type: 'line',
+                        source: {
+                            type: 'vector',
+                            tiles: [`https://api.tomtom.com/traffic/map/4/tile/flow/relative/{z}/{x}/{y}.png?key=${TOMTOM_API_KEY}`]
+                        },
+                        paint: {
+                            'line-color': [
+                                'match',
+                                ['get', 'congestion'],
+                                '0', '#10b981',
+                                '1', '#f9a61a',
+                                '2', '#ef4444',
+                                '3', '#8b5cf6',
+                                '#cccccc'
+                            ],
+                            'line-width': 4
+                        }
+                    });
+                } catch (e) {
+                    console.log('Traffic layer may already exist');
+                }
+                
+                // Load camera data after map is ready
+                setTimeout(() => {
+                    loadCameraData();
+                }, 500);
+            });
+        }
+
+        // Format time in hours and minutes
+        function formatTime(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            
+            if (hours > 0) {
+                return `${hours} घंटा ${minutes} मिनट`;
+            } else {
+                return `${minutes} मिनट`;
+            }
+        }
+
+        // Load camera data from API
+        async function loadCameraData() {
+            try {
+                // Try to fetch from API
+                let response;
+                try {
+                    response = await fetch(`${API_BASE_URL}/all-stats`);
+                } catch (e) {
+                    console.log('API not available, using mock data');
+                }
+                
+                if (response && response.ok) {
+                    const result = await response.json();
+                    if (result.success && Array.isArray(result.data)) {
+                        cameraData = result.data;
+                    } else {
+                        useMockData();
+                    }
+                } else {
+                    useMockData();
+                }
+                
+                updateCameraList();
+                // Clear existing markers before adding new ones
+                clearCameraMarkers();
+                updateCameraHeatmap();
+                populateCameraNav();
+            } catch (error) {
+                console.error('Error loading camera data:', error);
+                useMockData();
+                updateCameraList();
+                clearCameraMarkers();
+                updateCameraHeatmap();
+                populateCameraNav();
+            }
+        }
+
+        function useMockData() {
+            cameraData = [
+                { cameraName: 'Rishikesh Bridge', location: 'Rishikesh', liveCount: 245, totalCount: 1200, remainingCount: 890 },
+                { cameraName: 'Haridwar Gate', location: 'Haridwar', liveCount: 412, totalCount: 3000, remainingCount: 1700 },
+                { cameraName: 'Kedarnath Ji', location: 'Kedarnath', liveCount: 78, totalCount: 620, remainingCount: 320 },
+                { cameraName: 'Badrinath Temple', location: 'Badrinath', liveCount: 156, totalCount: 850, remainingCount: 480 },
+                { cameraName: 'Chopta Viewpoint', location: 'Chopta', liveCount: 23, totalCount: 180, remainingCount: 95 },
+                { cameraName: 'Mussoorie Mall Road', location: 'Mussoorie', liveCount: 189, totalCount: 950, remainingCount: 520 },
+                { cameraName: 'Nainital Lake', location: 'Nainital', liveCount: 267, totalCount: 1500, remainingCount: 820 },
+                { cameraName: 'Auli Ropeway', location: 'Auli', liveCount: 45, totalCount: 320, remainingCount: 140 },
+                { cameraName: 'Dehradun ISBT', location: 'Dehradun', liveCount: 534, totalCount: 2500, remainingCount: 1200 },
+                { cameraName: 'Pantnagar Airport', location: 'Pantnagar', liveCount: 89, totalCount: 450, remainingCount: 210 },
+                { cameraName: 'Gangotri Temple', location: 'Gangotri', liveCount: 34, totalCount: 280, remainingCount: 120 },
+                { cameraName: 'Yamunotri Temple', location: 'Yamunotri', liveCount: 28, totalCount: 220, remainingCount: 95 }
+            ];
+        }
+
+        // Clear existing camera markers
+        function clearCameraMarkers() {
+            cameraMarkers.forEach(marker => {
+                if (marker) marker.remove();
+            });
+            cameraMarkers = [];
+        }
+
+        // Update camera list in sidebar with navigation buttons
+        function updateCameraList() {
+            const listDiv = document.getElementById('cameraList');
+            
+            if (cameraData.length === 0) {
+                listDiv.innerHTML = '<div style="text-align:center; padding:20px;">कोई डेटा नहीं</div>';
+                return;
+            }
+
+            listDiv.innerHTML = cameraData.map(cam => {
+                const crowdLevel = getCrowdLevel(cam.remainingCount || 0);
+                // Only show name without "Camera" text
+                const displayName = cam.cameraName.replace(/Camera|कैमरा/gi, '').trim();
+                return `
+                    <div class="camera-card ${crowdLevel}">
+                        <div class="camera-header">
+                            <span class="camera-name"><i class="fas fa-map-marker-alt"></i> ${displayName}</span>
+                            <span class="camera-location"><i class="fas fa-map-pin"></i> ${cam.location}</span>
+                        </div>
+                        <div class="camera-stats">
+                            <span class="stat-badge"><i class="fas fa-eye"></i> ${cam.liveCount || 0}</span>
+                            <span class="stat-badge"><i class="fas fa-users"></i> ${cam.totalCount || 0}</span>
+                            <span class="stat-badge"><i class="fas fa-user-check"></i> ${cam.remainingCount || 0}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div class="crowd-badge ${crowdLevel}">
+                                <i class="fas ${crowdLevel === 'high' ? 'fa-exclamation-triangle' : crowdLevel === 'medium' ? 'fa-exclamation-circle' : 'fa-check-circle'}"></i>
+                                ${getCrowdLabel(cam.remainingCount || 0)}
+                            </div>
+                            <button class="camera-nav-btn" onclick="flyToCamera('${cam.cameraName}')">
+                                <i class="fas fa-location-arrow"></i> देखें
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Populate camera navigation panel
+        function populateCameraNav() {
+            const navList = document.getElementById('camera-nav-list');
+            if (!navList) return;
+            
+            navList.innerHTML = cameraData.map(cam => {
+                const crowdLevel = getCrowdLevel(cam.remainingCount || 0);
+                const color = crowdLevel === 'high' ? '#ef4444' : crowdLevel === 'medium' ? '#f9a61a' : '#10b981';
+                const displayName = cam.cameraName.replace(/Camera|कैमरा/gi, '').trim();
+                return `
+                    <div class="camera-nav-item">
+                        <div>
+                            <strong style="color: ${color};">${displayName}</strong>
+                            <div style="font-size: 11px; color: #666;">${cam.location} · ${cam.remainingCount} लोग</div>
+                        </div>
+                        <button onclick="flyToCamera('${cam.cameraName}')">
+                            <i class="fas fa-location-arrow"></i> जाएं
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Update camera heatmap on map - FIXED to show circles properly
+        function updateCameraHeatmap() {
+            // Remove existing camera markers
+            clearCameraMarkers();
+
+            cameraData.forEach(cam => {
+                const coords = getCameraCoordinates(cam);
+                const color = getCrowdColor(cam.remainingCount || 0);
+                const count = cam.remainingCount || 0;
+
+                // Create custom HTML element for heat circle
+                const heatEl = document.createElement('div');
+                heatEl.className = 'heat-circle';
+                
+                // Calculate size based on crowd (min 50px, max 150px)
+                const size = Math.min(50 + count * 0.4, 150);
+                heatEl.style.width = size + 'px';
+                heatEl.style.height = size + 'px';
+                heatEl.style.background = `radial-gradient(circle at 30% 30%, ${color}cc, ${color}80, ${color}40)`;
+                heatEl.style.border = `4px solid ${color}`;
+                heatEl.style.boxShadow = `0 0 40px ${color}`;
+                
+                // Add count badge
+                const badge = document.createElement('div');
+                badge.style.cssText = `
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: white;
+                    color: ${color};
+                    border-radius: 50%;
+                    width: 36px;
+                    height: 36px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-weight: bold;
+                    font-size: 14px;
+                    border: 3px solid ${color};
+                    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+                `;
+                badge.innerText = count;
+                heatEl.appendChild(badge);
+
+                // Create marker with custom element
+                const marker = new tt.Marker({ 
+                    element: heatEl,
+                    anchor: 'center'
+                }).setLngLat(coords);
+
+                // Add popup with location info
+                const displayName = cam.cameraName.replace(/Camera|कैमरा/gi, '').trim();
+                const popup = new tt.Popup({ 
+                    offset: 40,
+                    closeButton: true,
+                    closeOnClick: false
+                }).setHTML(`
+                    <div style="padding:15px; min-width:220px;">
+                        <h4 style="margin:0 0 8px 0; color:#1e3c72; font-size:18px;">${displayName}</h4>
+                        <p style="margin:5px 0; color:#666;"><i class="fas fa-map-pin"></i> ${cam.location}</p>
+                        <div style="display:flex; gap:20px; margin:15px 0; justify-content:center;">
+                            <div style="text-align:center;">
+                                <div style="color:#1e3c72; font-weight:600; font-size:20px;">${cam.liveCount || 0}</div>
+                                <div style="font-size:11px; color:#666;">लाइव</div>
+                            </div>
+                            <div style="text-align:center;">
+                                <div style="color:#f9a61a; font-weight:600; font-size:20px;">${cam.totalCount || 0}</div>
+                                <div style="font-size:11px; color:#666;">कुल</div>
+                            </div>
+                            <div style="text-align:center;">
+                                <div style="color:#10b981; font-weight:600; font-size:20px;">${cam.remainingCount || 0}</div>
+                                <div style="font-size:11px; color:#666;">अंदर</div>
+                            </div>
+                        </div>
+                        <div style="background:${color}; color:white; padding:10px; border-radius:8px; text-align:center; font-weight:600; font-size:14px;">
+                            ${getCrowdLabel(cam.remainingCount || 0)}
+                        </div>
+                        <button onclick="flyToCamera('${cam.cameraName}')" style="width:100%; margin-top:12px; padding:10px; background:#1e3c72; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:600;">
+                            <i class="fas fa-search-location"></i> ज़ूम करें
+                        </button>
+                    </div>
+                `);
+
+                marker.setPopup(popup);
+                
+                // Add click event to open popup
+                heatEl.addEventListener('click', () => {
+                    popup.addTo(map);
+                });
+
+                marker.addTo(map);
+                cameraMarkers.push(marker);
+            });
+            
+            console.log(`Added ${cameraMarkers.length} heat circles to map`);
+        }
+
+        // Get camera coordinates from database
+        function getCameraCoordinates(cam) {
+            const name = (cam.cameraName + ' ' + (cam.location || '')).toLowerCase();
+            
+            for (let [key, coords] of Object.entries(cameraCoordinates)) {
+                if (name.includes(key)) {
+                    return coords;
+                }
+            }
+            
+            // Default to Dehradun if not found
+            return [78.0322, 30.3165];
+        }
+
+        // Helper functions
+        function getCrowdLevel(count) {
+            if (count >= 100) return 'high';
+            if (count >= 50) return 'medium';
+            return 'low';
+        }
+
+        function getCrowdLabel(count) {
+            if (count >= 100) return 'अत्यधिक भीड़';
+            if (count >= 50) return 'भीड़';
+            return 'सामान्य';
+        }
+
+        function getCrowdColor(count) {
+            if (count >= 100) return '#ef4444';
+            if (count >= 50) return '#f9a61a';
+            return '#10b981';
+        }
+
+        // Fly to camera on click
+        window.flyToCamera = function(cameraName) {
+            const cam = cameraData.find(c => c.cameraName === cameraName);
+            if (cam) {
+                const coords = getCameraCoordinates(cam);
+                map.flyTo({ 
+                    center: coords, 
+                    zoom: 14, 
+                    duration: 2000,
+                    essential: true
+                });
+                
+                // Close nav panel
+                document.getElementById('camera-nav-panel').classList.remove('show');
+            }
+        };
+
+        // Search places using TomTom Fuzzy Search
+        async function searchPlaces(query, type) {
+            if (query.length < 3) return;
+
+            try {
+                const response = await fetch(
+                    `https://api.tomtom.com/search/2/search/${encodeURIComponent(query)}.json` +
+                    `?key=${TOMTOM_API_KEY}&limit=5&countrySet=IN&lat=30.3165&lon=78.0322&radius=200000`
+                );
+                
+                const data = await response.json();
+                
+                if (data.results && data.results.length > 0) {
+                    showSuggestions(data.results, type);
+                }
+            } catch (error) {
+                console.error('Search error:', error);
+            }
+        }
+
+        // Show search suggestions
+        function showSuggestions(results, type) {
+            const suggestionsDiv = document.getElementById(`${type}-suggestions`);
+            suggestionsDiv.innerHTML = '';
+
+            results.forEach(result => {
+                const div = document.createElement('div');
+                div.className = 'suggestion-item';
+                div.innerHTML = `
+                    <div class="suggestion-name">${result.address.freeformAddress}</div>
+                    <div class="suggestion-address">${result.type || 'स्थान'}</div>
+                `;
+                
+                div.onclick = () => selectPlace(result, type);
+                suggestionsDiv.appendChild(div);
+            });
+
+            suggestionsDiv.style.display = 'block';
+        }
+
+        // Select place from suggestions
+        function selectPlace(result, type) {
+            const placeData = {
+                name: result.address.freeformAddress,
+                coordinates: [result.position.lon, result.position.lat],
+                address: result.address
+            };
+
+            if (type === 'origin') {
+                origin = placeData;
+                document.getElementById('origin-search').value = result.address.freeformAddress;
+                document.getElementById('origin-name').textContent = result.address.freeformAddress;
+                document.getElementById('origin-selected').style.display = 'flex';
+                addMarker(placeData.coordinates, 'origin');
+            } else {
+                destination = placeData;
+                document.getElementById('destination-search').value = result.address.freeformAddress;
+                document.getElementById('destination-name').textContent = result.address.freeformAddress;
+                document.getElementById('destination-selected').style.display = 'flex';
+                addMarker(placeData.coordinates, 'destination');
+            }
+
+            document.getElementById(`${type}-suggestions`).style.display = 'none';
+            map.flyTo({ 
+                center: placeData.coordinates, 
+                zoom: 14, 
+                duration: 2000,
+                essential: true
+            });
+            updateFindRoutesButton();
+        }
+
+        // Add marker to map
+        function addMarker(coordinates, type) {
+            const color = type === 'origin' ? '#10b981' : '#ef4444';
+            new tt.Marker({ color })
+                .setLngLat(coordinates)
+                .addTo(map);
+        }
+
+        // Find routes with TomTom Routing API
+        async function findRoutes() {
+            if (!destination) {
+                alert('कृपया गंतव्य चुनें');
+                return;
+            }
+            
+            showLoading();
+
+            try {
+                // Use current location if origin not set but tracking is active
+                let startCoords;
+                if (origin) {
+                    startCoords = `${origin.coordinates[1]},${origin.coordinates[0]}`;
+                } else if (lastKnownPosition) {
+                    startCoords = `${lastKnownPosition[1]},${lastKnownPosition[0]}`;
+                    
+                    // Auto-set origin
+                    origin = {
+                        name: 'मेरी लोकेशन',
+                        coordinates: lastKnownPosition
+                    };
+                    document.getElementById('origin-search').value = 'मेरी लोकेशन';
+                    document.getElementById('origin-name').textContent = 'मेरी लोकेशन';
+                    document.getElementById('origin-selected').style.display = 'flex';
+                    addMarker(lastKnownPosition, 'origin');
+                } else {
+                    startCoords = '30.3165,78.0322'; // Default to Dehradun
+                }
+
+                const url = `https://api.tomtom.com/routing/1/calculateRoute/${startCoords}:${destination.coordinates[1]},${destination.coordinates[0]}/json` +
+                    `?key=${TOMTOM_API_KEY}&maxAlternatives=3&routeType=fastest&traffic=true&travelMode=car&computeTravelTimeFor=all`;
+
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.routes && data.routes.length > 0) {
+                    routes = data.routes;
+                    displayRoutes();
+                    displayRoutesOnMap();
+                    fitBoundsToRoutes();
+                } else {
+                    alert('कोई रास्ता नहीं मिला');
+                }
+            } catch (error) {
+                console.error('Routing error:', error);
+                alert('रास्ते खोजने में त्रुटि हुई');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Display routes in sidebar
+        function displayRoutes() {
+            const container = document.getElementById('routes-container');
+            const list = document.getElementById('routes-list');
+
+            container.style.display = 'block';
+            list.innerHTML = '';
+
+            // Sort routes by time
+            const sortedRoutes = [...routes].sort((a, b) => {
+                return a.summary.travelTimeInSeconds - b.summary.travelTimeInSeconds;
+            });
+
+            sortedRoutes.forEach((route, index) => {
+                const summary = route.summary;
+                const travelTime = summary.travelTimeInSeconds;
+                const trafficLevel = getTrafficLevel(travelTime, summary.travelTimeInSeconds);
+
+                const card = document.createElement('div');
+                card.className = `route-card ${index === 0 ? 'suggested' : ''}`;
+                
+                if (index === 0) {
+                    card.innerHTML = '<div class="suggested-badge"><i class="fas fa-check-circle"></i> सर्वोत्तम रास्ता</div>';
+                }
+
+                card.innerHTML += `
+                    <div class="route-header">
+                        <span class="route-name">रास्ता ${index + 1}</span>
+                        <span class="route-distance">${(summary.lengthInMeters / 1000).toFixed(1)} km</span>
+                    </div>
+                    <div class="route-description">
+                        ${getRouteDescription(route)}
+                    </div>
+                    <div class="traffic-indicator">
+                        <i class="fas fa-clock" style="color:#1e3c72;"></i>
+                        <div style="flex:1;">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                                <span>यात्रा समय:</span>
+                                <span class="time-display">${formatTime(travelTime)}</span>
+                            </div>
+                            <div class="traffic-bar">
+                                <div style="height:100%; width:${Math.min((travelTime/3600)*10, 100)}%; background:transparent;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="traffic-level ${trafficLevel}">
+                        <i class="fas ${trafficLevel === 'high' ? 'fa-exclamation-triangle' : trafficLevel === 'medium' ? 'fa-exclamation-circle' : 'fa-check-circle'}"></i>
+                        ट्रैफिक: ${trafficLevel === 'high' ? 'भारी जाम' : trafficLevel === 'medium' ? 'धीमी गति' : 'सामान्य'}
+                    </div>
+                `;
+
+                card.onclick = () => selectRoute(index);
+                list.appendChild(card);
+            });
+
+            selectRoute(0);
+        }
+
+        // Get route description
+        function getRouteDescription(route) {
+            if (!route.legs || !route.legs[0] || !route.legs[0].points) return 'सीधा मार्ग';
+            return 'मुख्य मार्ग';
+        }
+
+        // Get traffic level
+        function getTrafficLevel(travelTime, normalTime) {
+            const ratio = travelTime / normalTime;
+            if (ratio >= 1.5) return 'high';
+            if (ratio >= 1.2) return 'medium';
+            return 'low';
+        }
+
+        // Display routes on map with beam effect
+        function displayRoutesOnMap() {
+            // Clear existing route layers
+            routeLayers.forEach(layer => {
+                if (map.getLayer(layer)) map.removeLayer(layer);
+                if (map.getSource(layer)) map.removeSource(layer);
+            });
+            routeLayers = [];
+
+            routes.forEach((route, index) => {
+                const isSelected = index === selectedRouteIndex;
+                const isSuggested = index === 0;
+                
+                let color, width;
+                if (isSelected) {
+                    color = '#1e3c72';
+                    width = 8;
+                } else if (isSuggested) {
+                    color = '#10b981';
+                    width = 6;
+                } else {
+                    color = '#cccccc';
+                    width = 4;
+                }
+
+                const coordinates = route.legs[0].points.map(p => [p.longitude, p.latitude]);
+
+                const layerId = `route-${index}`;
+                
+                // Add main route line
+                map.addLayer({
+                    id: layerId,
+                    type: 'line',
+                    source: {
+                        type: 'geojson',
+                        data: {
+                            type: 'Feature',
+                            geometry: {
+                                type: 'LineString',
+                                coordinates: coordinates
+                            }
+                        }
+                    },
+                    paint: {
+                        'line-color': color,
+                        'line-width': width,
+                        'line-opacity': isSelected ? 1 : 0.7
+                    }
+                });
+
+                // Add glow effect for suggested route
+                if (isSuggested) {
+                    const glowId = `route-glow-${index}`;
+                    map.addLayer({
+                        id: glowId,
+                        type: 'line',
+                        source: {
+                            type: 'geojson',
+                            data: {
+                                type: 'Feature',
+                                geometry: {
+                                    type: 'LineString',
+                                    coordinates: coordinates
+                                }
+                            }
+                        },
+                        paint: {
+                            'line-color': '#10b981',
+                            'line-width': width + 4,
+                            'line-opacity': 0.3,
+                            'line-blur': 5
+                        }
+                    });
+                    routeLayers.push(glowId);
+                }
+
+                routeLayers.push(layerId);
+            });
+        }
+
+        // Fit bounds to show all routes
+        function fitBoundsToRoutes() {
+            if (!routes.length) return;
+
+            const bounds = new tt.LngLatBounds();
+            routes.forEach(route => {
+                route.legs[0].points.forEach(p => {
+                    bounds.extend([p.longitude, p.latitude]);
+                });
+            });
+
+            map.fitBounds(bounds, { 
+                padding: 100, 
+                duration: 1000, 
+                maxZoom: 12,
+                essential: true
+            });
+        }
+
+        // Select route
+        function selectRoute(index) {
+            selectedRouteIndex = index;
+            
+            document.querySelectorAll('.route-card').forEach((card, i) => {
+                if (i === index) {
+                    card.classList.add('selected');
+                } else {
+                    card.classList.remove('selected');
+                }
+            });
+
+            displayRoutesOnMap();
+        }
+
+        // Live Tracking - FIXED and working
+        function startTracking() {
+            if (!navigator.geolocation) {
+                alert('आपका ब्राउज़र जियोलोकेशन सपोर्ट नहीं करता');
+                return;
+            }
+
+            const btn = document.getElementById('toggle-tracking');
+            const bar = document.getElementById('live-tracking-bar');
+            const status = document.getElementById('tracking-status');
+            
+            btn.innerHTML = '<i class="fas fa-stop"></i> बंद करें';
+            btn.classList.add('active');
+            bar.classList.add('active');
+            status.textContent = 'लाइव ट्रैकिंग चालू';
+            isTracking = true;
+
+            // Get initial position
+            navigator.geolocation.getCurrentPosition(
+                position => {
+                    const { latitude, longitude } = position.coords;
+                    lastKnownPosition = [longitude, latitude];
+                    
+                    // Add user marker
+                    if (userMarker) {
+                        userMarker.remove();
+                    }
+                    
+                    const userEl = document.createElement('div');
+                    userEl.className = 'user-location-marker';
+                    userMarker = new tt.Marker({ element: userEl })
+                        .setLngLat([longitude, latitude])
+                        .addTo(map);
+                    
+                    // Center map on user
+                    map.flyTo({ 
+                        center: [longitude, latitude], 
+                        zoom: 14, 
+                        duration: 2000,
+                        essential: true
+                    });
+                    
+                    // Check geofence if active
+                    if (geofenceActive) {
+                        checkGeofence([longitude, latitude]);
+                    }
+                },
+                error => {
+                    console.error('Initial position error:', error);
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                }
+            );
+
+            // Watch position continuously
+            watchId = navigator.geolocation.watchPosition(
+                position => {
+                    const { latitude, longitude, accuracy } = position.coords;
+                    lastKnownPosition = [longitude, latitude];
+
+                    // Update user marker
+                    if (userMarker) {
+                        userMarker.setLngLat([longitude, latitude]);
+                    } else {
+                        const userEl = document.createElement('div');
+                        userEl.className = 'user-location-marker';
+                        userMarker = new tt.Marker({ element: userEl })
+                            .setLngLat([longitude, latitude])
+                            .addTo(map);
+                    }
+
+                    // Update accuracy circle
+                    if (map.getLayer('user-accuracy')) {
+                        map.removeLayer('user-accuracy');
+                        map.removeSource('user-accuracy');
+                    }
+
+                    map.addSource('user-accuracy', {
+                        type: 'geojson',
+                        data: {
+                            type: 'Feature',
+                            geometry: {
+                                type: 'Point',
+                                coordinates: [longitude, latitude]
+                            }
+                        }
+                    });
+
+                    map.addLayer({
+                        id: 'user-accuracy',
+                        type: 'circle',
+                        source: 'user-accuracy',
+                        paint: {
+                            'circle-radius': accuracy,
+                            'circle-color': '#3b82f6',
+                            'circle-opacity': 0.1,
+                            'circle-stroke-width': 2,
+                            'circle-stroke-color': '#3b82f6',
+                            'circle-stroke-opacity': 0.5
+                        }
+                    });
+
+                    // Check geofence if active
+                    if (geofenceActive) {
+                        checkGeofence([longitude, latitude]);
+                    }
+
+                    updateFindRoutesButton();
+                },
+                error => {
+                    console.error('Geolocation error:', error);
+                    if (error.code === 1) {
+                        alert('कृपया लोकेशन एक्सेस की अनुमति दें');
+                        stopTracking();
+                    }
+                },
+                {
+                    enableHighAccuracy: true,
+                    maximumAge: 0,
+                    timeout: 10000
+                }
+            );
+        }
+
+        function stopTracking() {
+            if (watchId) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+            }
+
+            if (userMarker) {
+                userMarker.remove();
+                userMarker = null;
+            }
+
+            if (map.getLayer('user-accuracy')) {
+                map.removeLayer('user-accuracy');
+                map.removeSource('user-accuracy');
+            }
+
+            const btn = document.getElementById('toggle-tracking');
+            const bar = document.getElementById('live-tracking-bar');
+            const status = document.getElementById('tracking-status');
+            
+            btn.innerHTML = '<i class="fas fa-play"></i> शुरू करें';
+            btn.classList.remove('active');
+            bar.classList.remove('active');
+            status.textContent = 'लाइव ट्रैकिंग बंद';
+            isTracking = false;
+        }
+
+        // Use current location as origin
+        function useCurrentAsOrigin() {
+            if (!navigator.geolocation) {
+                alert('जियोलोकेशन सपोर्ट नहीं है');
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                position => {
+                    const { latitude, longitude } = position.coords;
+                    setOriginFromCoords(longitude, latitude);
+                },
+                error => {
+                    console.error('Error getting location:', error);
+                    alert('लोकेशन नहीं मिल सकी');
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000
+                }
+            );
+        }
+
+        function setOriginFromCoords(lng, lat) {
+            // Reverse geocode to get address
+            fetch(`https://api.tomtom.com/search/2/reverseGeocode/${lat},${lng}.json?key=${TOMTOM_API_KEY}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.addresses && data.addresses[0]) {
+                        const address = data.addresses[0].address.freeformAddress;
+                        origin = {
+                            name: address,
+                            coordinates: [lng, lat]
+                        };
+                        document.getElementById('origin-search').value = address;
+                        document.getElementById('origin-name').textContent = address;
+                        document.getElementById('origin-selected').style.display = 'flex';
+                        addMarker([lng, lat], 'origin');
+                        map.flyTo({ 
+                            center: [lng, lat], 
+                            zoom: 14,
+                            essential: true
+                        });
+                        updateFindRoutesButton();
+                    }
+                })
+                .catch(error => {
+                    console.error('Reverse geocode error:', error);
+                    // Set with generic name if reverse geocode fails
+                    origin = {
+                        name: 'मेरी लोकेशन',
+                        coordinates: [lng, lat]
+                    };
+                    document.getElementById('origin-search').value = 'मेरी लोकेशन';
+                    document.getElementById('origin-name').textContent = 'मेरी लोकेशन';
+                    document.getElementById('origin-selected').style.display = 'flex';
+                    addMarker([lng, lat], 'origin');
+                    map.flyTo({ 
+                        center: [lng, lat], 
+                        zoom: 14,
+                        essential: true
+                    });
+                    updateFindRoutesButton();
+                });
+        }
+
+        // Geofencing - COMPLETELY FIXED with proper borders and alerts
+        function activateGeofence() {
+            const btn = document.getElementById('geofence-btn');
+            const safetyInfo = document.getElementById('safety-zone-info');
+            
+            if (!geofenceActive) {
+                // Create geofence around Dehradun and nearby areas (safe zone)
+                const center = [78.0322, 30.3165];
+                const radius = 0.8; // degrees (~80km)
+
+                const points = [];
+                for (let i = 0; i <= 360; i += 5) {
+                    const angle = i * Math.PI / 180;
+                    const lng = center[0] + radius * Math.cos(angle) * 1.2;
+                    const lat = center[1] + radius * Math.sin(angle);
+                    points.push([lng, lat]);
+                }
+
+                if (geofencePolygon) {
+                    geofencePolygon.remove();
+                }
+
+                // Create filled geofence polygon with semi-transparent fill
+                geofencePolygon = new tt.Polygon({
+                    coordinates: [points],
+                    color: '#10b981',
+                    outlineColor: '#10b981',
+                    strokeWidth: 3,
+                    fillColor: 'rgba(16,185,129,0.15)'
+                }).addTo(map);
+
+                // Add animated border around geofence
+                if (geofenceBorder) {
+                    geofenceBorder.remove();
+                }
+
+                // Create a separate dashed border for visual effect
+                geofenceBorder = new tt.Polygon({
+                    coordinates: [points],
+                    color: '#10b981',
+                    outlineColor: '#10b981',
+                    strokeWidth: 4,
+                    fillColor: 'transparent',
+                    strokeDashArray: [5, 5]
+                }).addTo(map);
+
+                btn.innerHTML = '<i class="fas fa-shield-alt"></i> जियोफेंसिंग सक्रिय';
+                btn.classList.add('active');
+                geofenceActive = true;
+                
+                // Show safety info
+                safetyInfo.classList.add('active');
+                
+                // Check current position if tracking
+                if (isTracking && lastKnownPosition) {
+                    checkGeofence(lastKnownPosition);
+                }
+
+                showGeofenceAlert('✅ जियोफेंस सक्रिय - अब आप सुरक्षित हैं', 'success');
+            } else {
+                if (geofencePolygon) {
+                    geofencePolygon.remove();
+                    geofencePolygon = null;
+                }
+                if (geofenceBorder) {
+                    geofenceBorder.remove();
+                    geofenceBorder = null;
+                }
+
+                btn.innerHTML = '<i class="fas fa-shield-alt"></i> जियोफेंसिंग सुरक्षा सक्रिय करें';
+                btn.classList.remove('active');
+                geofenceActive = false;
+                safetyInfo.classList.remove('active');
+            }
+        }
+
+        // Check if user is inside geofence - FIXED with proper detection
+        function checkGeofence(userLocation) {
+            if (!geofencePolygon || !geofenceActive) return;
+
+            const center = [78.0322, 30.3165];
+            const radius = 0.8;
+            
+            // Calculate distance from center with proper scaling
+            const dx = (userLocation[0] - center[0]) / 1.2;
+            const dy = userLocation[1] - center[1];
+            const distance = Math.sqrt(dx*dx + dy*dy);
+            
+            const wasInside = insideGeofence;
+            insideGeofence = distance <= radius;
+            
+            // Update safety info
+            const safetyInfo = document.getElementById('safety-zone-info');
+            if (insideGeofence) {
+                safetyInfo.innerHTML = '<i class="fas fa-shield-alt" style="color:#10b981;"></i> <span>सुरक्षित क्षेत्र के अंदर हैं</span>';
+                safetyInfo.style.borderLeftColor = '#10b981';
+            } else {
+                safetyInfo.innerHTML = '<i class="fas fa-exclamation-triangle" style="color:#ef4444;"></i> <span>सुरक्षित क्षेत्र से बाहर!</span>';
+                safetyInfo.style.borderLeftColor = '#ef4444';
+            }
+            
+            // Change border color based on status
+            if (geofenceBorder) {
+                geofenceBorder.remove();
+                const points = geofencePolygon.getCoordinates()[0];
+                const borderColor = insideGeofence ? '#10b981' : '#ef4444';
+                
+                geofenceBorder = new tt.Polygon({
+                    coordinates: [points],
+                    color: borderColor,
+                    outlineColor: borderColor,
+                    strokeWidth: 4,
+                    fillColor: 'transparent',
+                    strokeDashArray: [5, 5]
+                }).addTo(map);
+            }
+            
+            // Show alert when crossing boundary
+            if (!insideGeofence && wasInside) {
+                showGeofenceAlert('⚠️ सावधान! आप सुरक्षित क्षेत्र से बाहर जा रहे हैं', 'danger');
+                
+                // Play sound alert
+                try {
+                    const audio = new Audio('data:audio/wav;base64,UklGRlwAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YVoAAACAgICAf39/f39/f3+AgICAf39/f39/f3+AgICAf39/f39/f3+AgICAf39/f39/f3+AgICAf39/f39/f3+AgICAf39/f39/f3+AgICAf39/f39/f38=');
+                    audio.play().catch(e => console.log('Audio play failed:', e));
+                } catch (e) {}
+            }
+        }
+
+        // Show geofence alert - FIXED with better animation
+        function showGeofenceAlert(message, type = 'danger') {
+            const alert = document.getElementById('geofence-alert');
+            const alertMessage = document.getElementById('alert-message');
+            
+            alertMessage.textContent = message;
+            
+            if (type === 'success') {
+                alert.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+                alert.querySelector('i').className = 'fas fa-check-circle';
+            } else {
+                alert.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+                alert.querySelector('i').className = 'fas fa-exclamation-triangle';
+            }
+            
+            alert.style.display = 'flex';
+            
+            // Create progress bar
+            const progress = document.createElement('div');
+            progress.className = 'alert-progress';
+            progress.style.animation = 'progress 5s linear';
+            alert.appendChild(progress);
+
+            // Auto hide after 5 seconds
+            setTimeout(() => {
+                alert.style.display = 'none';
+                if (progress) progress.remove();
+            }, 5000);
+        }
+
+        // Helper functions
+        function updateFindRoutesButton() {
+            const btn = document.getElementById('find-routes');
+            btn.disabled = !(destination);
+        }
+
+        function showLoading() {
+            document.getElementById('loading-overlay').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading-overlay').style.display = 'none';
+        }
+
+        // Event listeners
+        function setupEventListeners() {
+            // Search inputs
+            document.getElementById('origin-search').addEventListener('input', debounce(e => {
+                searchPlaces(e.target.value, 'origin');
+            }, 500));
+
+            document.getElementById('destination-search').addEventListener('input', debounce(e => {
+                searchPlaces(e.target.value, 'destination');
+            }, 500));
+
+            // Use current location as origin
+            document.getElementById('use-current-origin').addEventListener('click', useCurrentAsOrigin);
+
+            // Show camera navigation panel
+            document.getElementById('show-camera-nav').addEventListener('click', () => {
+                document.getElementById('camera-nav-panel').classList.add('show');
+                populateCameraNav();
+            });
+
+            // Focus events to clear selections
+            document.getElementById('origin-search').addEventListener('focus', () => {
+                if (origin) {
+                    origin = null;
+                    document.getElementById('origin-selected').style.display = 'none';
+                    document.getElementById('origin-search').value = '';
+                    updateFindRoutesButton();
+                }
+            });
+
+            document.getElementById('destination-search').addEventListener('focus', () => {
+                if (destination) {
+                    destination = null;
+                    document.getElementById('destination-selected').style.display = 'none';
+                    document.getElementById('destination-search').value = '';
+                    updateFindRoutesButton();
+                }
+            });
+
+            // Find routes button
+            document.getElementById('find-routes').addEventListener('click', findRoutes);
+
+            // Refresh cameras
+            document.getElementById('refreshCameras').addEventListener('click', () => {
+                loadCameraData();
+            });
+
+            // Live tracking
+            document.getElementById('toggle-tracking').addEventListener('click', () => {
+                if (isTracking) {
+                    stopTracking();
+                } else {
+                    startTracking();
+                }
+            });
+
+            // Geofencing
+            document.getElementById('geofence-btn').addEventListener('click', activateGeofence);
+
+            // Map controls
+            document.getElementById('my-location').addEventListener('click', () => {
+                if (userMarker) {
+                    const lngLat = userMarker.getLngLat();
+                    map.flyTo({ 
+                        center: [lngLat.lng, lngLat.lat], 
+                        zoom: 15, 
+                        duration: 2000,
+                        essential: true
+                    });
+                } else if (lastKnownPosition) {
+                    map.flyTo({ 
+                        center: lastKnownPosition, 
+                        zoom: 15, 
+                        duration: 2000,
+                        essential: true
+                    });
+                }
+            });
+
+            document.getElementById('zoom-in').addEventListener('click', () => {
+                map.zoomTo(map.getZoom() + 1);
+            });
+
+            document.getElementById('zoom-out').addEventListener('click', () => {
+                map.zoomTo(map.getZoom() - 1);
+            });
+
+            // Close suggestions on outside click
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#origin-search') && !e.target.closest('#origin-suggestions') && !e.target.closest('#use-current-origin')) {
+                    document.getElementById('origin-suggestions').style.display = 'none';
+                }
+                if (!e.target.closest('#destination-search') && !e.target.closest('#destination-suggestions')) {
+                    document.getElementById('destination-suggestions').style.display = 'none';
+                }
+                if (!e.target.closest('#camera-nav-panel') && !e.target.closest('#show-camera-nav')) {
+                    document.getElementById('camera-nav-panel').classList.remove('show');
+                }
+            });
+        }
+
+        function debounce(fn, delay) {
+            let timeout;
+            return function(...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => fn.apply(this, args), delay);
+            };
+        }
+
+        // Initialize everything
+        window.onload = function() {
+            initMap();
+            setupEventListeners();
+            
+            // Load camera data with delay
+            setTimeout(() => {
+                loadCameraData();
+            }, 1000);
+            
+            refreshInterval = setInterval(loadCameraData, 30000);
+        };
+
+        window.addEventListener('beforeunload', () => {
+            if (refreshInterval) clearInterval(refreshInterval);
+            if (watchId) navigator.geolocation.clearWatch(watchId);
+        });
+    </script>
+</body>
+</html>

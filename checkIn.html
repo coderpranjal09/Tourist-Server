@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>उत्तराखंड पर्यटन · प्रवेश द्वार | Uttarakhand Tourism · Entry Gate</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+      background: #f5f5f5;
+      min-height: 100vh;
+    }
+
+    .tourism-header {
+      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+      color: white;
+      padding: 15px 50px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 4px solid #f9a61a;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 30px;
+    }
+
+    .govt-emblem {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .ashoka-lion {
+      font-size: 48px;
+      color: #f9a61a;
+    }
+
+    .emblem-text {
+      line-height: 1.4;
+    }
+
+    .emblem-text .hindi {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .emblem-text .english {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    .tourism-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-left: 2px solid rgba(255,255,255,0.3);
+      padding-left: 30px;
+    }
+
+    .tourism-logo i {
+      font-size: 40px;
+      color: #f9a61a;
+    }
+
+    .tourism-logo span {
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    .header-right {
+      text-align: right;
+    }
+
+    .header-right .dept {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    .header-right .tagline {
+      font-size: 12px;
+      font-style: italic;
+    }
+
+    .main-container {
+      max-width: 1400px;
+      margin: 30px auto;
+      padding: 0 30px;
+    }
+
+    .location-bar {
+      background: white;
+      border-radius: 60px;
+      padding: 15px 25px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 30px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+      border: 1px solid #e0e0e0;
+    }
+
+    .location-info {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .location-icon {
+      background: #1e3c72;
+      color: white;
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .location-select select {
+      border: none;
+      background: #f5f5f5;
+      padding: 12px 25px;
+      border-radius: 30px;
+      font-size: 16px;
+      min-width: 350px;
+      cursor: pointer;
+      border: 1px solid #ddd;
+      font-weight: 500;
+    }
+
+    .refresh-btn {
+      background: #1e3c72;
+      color: white;
+      border: none;
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .refresh-btn:hover {
+      background: #2a5298;
+      transform: rotate(180deg);
+    }
+
+    .date-time {
+      color: #666;
+      font-size: 14px;
+    }
+
+    .gate-card {
+      background: white;
+      border-radius: 30px;
+      overflow: hidden;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+      border: 1px solid #e0e0e0;
+    }
+
+    .gate-header {
+      background: linear-gradient(135deg, #1e7920 0%, #2a9d2a 100%);
+      color: white;
+      padding: 25px 35px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .gate-header h2 {
+      font-size: 32px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .gate-header h2 i {
+      background: rgba(255,255,255,0.2);
+      padding: 15px;
+      border-radius: 50%;
+    }
+
+    .gate-badge {
+      background: #f9a61a;
+      color: #1e3c72;
+      padding: 10px 25px;
+      border-radius: 40px;
+      font-weight: 600;
+      font-size: 18px;
+    }
+
+    .gate-content {
+      padding: 35px;
+    }
+
+    .video-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 30px;
+      margin-bottom: 30px;
+    }
+
+    .video-wrapper {
+      position: relative;
+      background: #000;
+      border-radius: 20px;
+      overflow: hidden;
+      aspect-ratio: 16/9;
+      border: 3px solid #1e7920;
+    }
+
+    #video, #canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    #canvas {
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .video-placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #666;
+      background: #0a0a0a;
+      z-index: 1;
+      gap: 15px;
+      flex-direction: column;
+    }
+
+    .stats-panel {
+      background: #f8f9fc;
+      border-radius: 20px;
+      padding: 25px;
+      border: 1px solid #e0e0e0;
+    }
+
+    .stats-panel h3 {
+      color: #1e3c72;
+      font-size: 22px;
+      margin-bottom: 25px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 3px solid #f9a61a;
+      padding-bottom: 12px;
+    }
+
+    .stat-items {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .stat-item {
+      background: white;
+      border-radius: 15px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+      border-left: 5px solid;
+    }
+
+    .stat-item.entry { border-color: #1e7920; }
+    .stat-item.total { border-color: #f9a61a; }
+    .stat-item.inside { border-color: #1e3c72; }
+
+    .stat-label {
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 8px;
+      letter-spacing: 1px;
+    }
+
+    .stat-number {
+      font-size: 48px;
+      font-weight: 700;
+      color: #1e3c72;
+      line-height: 1.2;
+    }
+
+    .stat-unit {
+      font-size: 16px;
+      color: #999;
+    }
+
+    .control-panel {
+      background: #f8f9fc;
+      border-radius: 20px;
+      padding: 25px;
+      margin-top: 25px;
+    }
+
+    .control-panel h3 {
+      color: #1e3c72;
+      font-size: 22px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .button-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+
+    .btn {
+      padding: 16px 20px;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .btn-primary {
+      background: #1e7920;
+      color: white;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: #2a9d2a;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(30,121,32,0.3);
+    }
+
+    .btn-danger {
+      background: #dc3545;
+      color: white;
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      background: #c82333;
+      transform: translateY(-2px);
+    }
+
+    .btn-warning {
+      background: #f9a61a;
+      color: #1e3c72;
+    }
+
+    .btn-warning:hover {
+      background: #fbb13c;
+      transform: translateY(-2px);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .manual-box {
+      background: white;
+      border-radius: 15px;
+      padding: 20px;
+      border: 2px dashed #1e7920;
+    }
+
+    .manual-box h4 {
+      color: #1e3c72;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .manual-controls {
+      display: flex;
+      gap: 15px;
+    }
+
+    .manual-input {
+      flex: 1;
+      padding: 14px 20px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 16px;
+    }
+
+    .manual-input:focus {
+      outline: none;
+      border-color: #1e7920;
+    }
+
+    .btn-manual {
+      background: #1e7920;
+      color: white;
+      border: none;
+      padding: 14px 40px;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .btn-manual:hover {
+      background: #2a9d2a;
+      transform: translateY(-2px);
+    }
+
+    .footer-bar {
+      background: white;
+      border-radius: 60px;
+      padding: 15px 25px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 30px;
+      border: 1px solid #e0e0e0;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .status-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #28a745;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.1); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    .sync-time {
+      color: #666;
+    }
+
+    .sync-time i {
+      color: #f9a61a;
+      margin-right: 5px;
+    }
+
+    .error-message {
+      background: #f8d7da;
+      color: #721c24;
+      padding: 15px 20px;
+      border-radius: 10px;
+      margin-top: 15px;
+      border-left: 5px solid #dc3545;
+      display: none;
+    }
+
+    .error-message.show {
+      display: block;
+    }
+
+    .tourism-footer {
+      background: #1e3c72;
+      color: white;
+      padding: 40px 50px 20px;
+      margin-top: 50px;
+    }
+
+    .footer-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 40px;
+    }
+
+    .footer-section h4 {
+      color: #f9a61a;
+      margin-bottom: 20px;
+      font-size: 18px;
+    }
+
+    .footer-section p, .footer-section a {
+      color: rgba(255,255,255,0.8);
+      text-decoration: none;
+      line-height: 1.8;
+      font-size: 14px;
+    }
+
+    .footer-section a:hover {
+      color: #f9a61a;
+    }
+
+    .copyright {
+      text-align: center;
+      padding-top: 30px;
+      margin-top: 30px;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.6);
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="tourism-header">
+    <div class="header-left">
+      <div class="govt-emblem">
+        <i class="fas fa-chess-queen ashoka-lion"></i>
+        <div class="emblem-text">
+          <div class="hindi">सरकार उत्तराखंड</div>
+          <div class="english">GOVERNMENT OF UTTARAKHAND</div>
+        </div>
+      </div>
+      <div class="tourism-logo">
+        <i class="fas fa-mountain"></i>
+        <span>पर्यटन विभाग · TOURISM</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="dept">देवभूमि · Land of Gods</div>
+      <div class="tagline">स्वागतम् · Welcome</div>
+    </div>
+  </div>
+
+  <div class="main-container">
+    <div class="location-bar">
+      <div class="location-info">
+        <div class="location-icon"><i class="fas fa-map-pin"></i></div>
+        <div class="location-select">
+          <select id="cameraSelect" disabled>
+            <option value="">कैमरा चुनें · Select Camera</option>
+          </select>
+        </div>
+        <button class="refresh-btn" id="refreshCameras">
+          <i class="fas fa-sync-alt"></i>
+        </button>
+      </div>
+      <div class="date-time" id="currentDateTime"></div>
+    </div>
+
+    <div class="gate-card">
+      <div class="gate-header">
+        <h2>
+          <i class="fas fa-sign-in-alt"></i>
+          प्रवेश द्वार · ENTRY GATE
+        </h2>
+        <span class="gate-badge">चेक-इन · CHECK-IN</span>
+      </div>
+
+      <div class="gate-content">
+        <div class="video-row">
+          <div class="video-wrapper" id="videoContainer">
+            <video id="video" autoplay playsinline></video>
+            <canvas id="canvas"></canvas>
+            <div class="video-placeholder" id="placeholder">
+              <i class="fas fa-camera" style="font-size: 48px;"></i>
+              <span>कैमरा शुरू करें · Start Camera</span>
+            </div>
+          </div>
+
+          <div class="stats-panel">
+            <h3><i class="fas fa-chart-line"></i> आँकड़े · STATISTICS</h3>
+            <div class="stat-items">
+              <div class="stat-item entry">
+                <div class="stat-label">लाइव गणना · LIVE</div>
+                <div class="stat-number" id="liveCount">0</div>
+              </div>
+              <div class="stat-item total">
+                <div class="stat-label">कुल प्रवेश · TOTAL</div>
+                <div class="stat-number" id="totalCount">0</div>
+              </div>
+              <div class="stat-item inside">
+                <div class="stat-label">अंदर कुल · INSIDE</div>
+                <div class="stat-number" id="remainingCount">0</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="control-panel">
+          <h3><i class="fas fa-sliders-h"></i> नियंत्रण · CONTROLS</h3>
+          
+          <div class="button-grid">
+            <button class="btn btn-primary" id="startBtn" disabled>
+              <i class="fas fa-play"></i> शुरू करें
+            </button>
+            <button class="btn btn-danger" id="stopBtn" disabled>
+              <i class="fas fa-stop"></i> बंद करें
+            </button>
+            <button class="btn btn-warning" id="testCameraBtn">
+              <i class="fas fa-camera"></i> परीक्षण
+            </button>
+          </div>
+
+          <div class="manual-box">
+            <h4><i class="fas fa-hand-paper"></i> मैन्युअल प्रवेश · MANUAL CHECK-IN</h4>
+            <div class="manual-controls">
+              <input type="number" id="manualCount" class="manual-input" value="1" min="1" max="100" placeholder="संख्या">
+              <button class="btn-manual" id="manualCheckinBtn">
+                <i class="fas fa-user-plus"></i> प्रवेश
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="footer-bar">
+          <div class="status">
+            <span class="status-dot"></span>
+            <span id="apiStatus">प्रणाली सक्रिय · System Active</span>
+          </div>
+          <div class="sync-time">
+            <i class="fas fa-clock"></i>
+            <span id="lastSync">—</span>
+          </div>
+        </div>
+
+        <div id="errorDisplay" class="error-message"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tourism-footer">
+    <div class="footer-content">
+      <div class="footer-section">
+        <h4>उत्तराखंड पर्यटन</h4>
+        <p>देवभूमि उत्तराखंड में आपका स्वागत है। यहाँ के प्राकृतिक सौंदर्य, मंदिरों और संस्कृति का आनंद लें।</p>
+      </div>
+      <div class="footer-section">
+        <h4>महत्वपूर्ण लिंक</h4>
+        <p><a href="#">पर्यटन स्थल</a></p>
+        <p><a href="#">आवास</a></p>
+        <p><a href="#">संपर्क</a></p>
+      </div>
+      <div class="footer-section">
+        <h4>संपर्क करें</h4>
+        <p><i class="fas fa-phone"></i> +91 135 255 9898</p>
+        <p><i class="fas fa-envelope"></i> tourism@uk.gov.in</p>
+        <p><i class="fas fa-map-marker-alt"></i> देहरादून, उत्तराखंड</p>
+      </div>
+    </div>
+    <div class="copyright">
+      © 2024 उत्तराखंड पर्यटन विकास परिषद | Uttarakhand Tourism Development Board
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.0.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.2/dist/coco-ssd.min.js"></script>
+
+  <script>
+    (function() {
+      const API_BASE_URL = 'http://localhost:5000/api/crowd';
+      
+      const video = document.getElementById('video');
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+      const placeholder = document.getElementById('placeholder');
+      const videoContainer = document.getElementById('videoContainer');
+      const liveSpan = document.getElementById('liveCount');
+      const totalSpan = document.getElementById('totalCount');
+      const remainingSpan = document.getElementById('remainingCount');
+      const cameraSelect = document.getElementById('cameraSelect');
+      const refreshBtn = document.getElementById('refreshCameras');
+      const startBtn = document.getElementById('startBtn');
+      const stopBtn = document.getElementById('stopBtn');
+      const testCameraBtn = document.getElementById('testCameraBtn');
+      const manualCheckinBtn = document.getElementById('manualCheckinBtn');
+      const manualCount = document.getElementById('manualCount');
+      const apiStatusSpan = document.getElementById('apiStatus');
+      const lastSyncSpan = document.getElementById('lastSync');
+      const errorDisplay = document.getElementById('errorDisplay');
+      const dateTimeSpan = document.getElementById('currentDateTime');
+
+      let model = null;
+      let cameras = [];
+      let selectedCameraId = null;
+      let detectionActive = false;
+      let animationFrame = null;
+      let cameraStream = null;
+      let apiSyncInterval = null;
+      
+      const trackedPersons = new Map();
+      const verifiedPersons = new Set();
+      const recentEntries = new Map();
+      let nextPersonId = 0;
+      let pendingCount = 0;
+      let lastApiCall = 0;
+      
+      const CONFIDENCE = 0.4;
+      const VERIFICATION_TIME = 3000;
+      const GRACE_PERIOD = 1000;
+      const DISTANCE_THRESHOLD = 100;
+      const API_COOLDOWN = 1000;
+      const MAX_TRACKING_TIME = 15000;
+
+      function updateDateTime() {
+        const now = new Date();
+        dateTimeSpan.innerText = now.toLocaleString('hi-IN', { 
+          weekday: 'long', 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      }
+      setInterval(updateDateTime, 1000);
+      updateDateTime();
+
+      function showError(msg) {
+        errorDisplay.innerText = msg;
+        errorDisplay.classList.add('show');
+      }
+
+      function hideError() {
+        errorDisplay.classList.remove('show');
+      }
+
+      function updateApiStatus(connected) {
+        apiStatusSpan.innerHTML = connected ? 
+          'प्रणाली सक्रिय · System Active' : 
+          'प्रणाली बंद · System Offline';
+      }
+
+      function formatTime() {
+        return new Date().toLocaleTimeString('hi-IN');
+      }
+
+      async function fetchCameras() {
+        try {
+          cameraSelect.disabled = true;
+          refreshBtn.disabled = true;
+          hideError();
+          
+          const response = await fetch(`${API_BASE_URL}/all-stats`);
+          if (!response.ok) throw new Error('Failed to fetch');
+          
+          const data = await response.json();
+          
+          if (data.success && data.data) {
+            cameras = data.data;
+            
+            cameraSelect.innerHTML = '<option value="">कैमरा चुनें · Select Camera</option>';
+            cameras.forEach(cam => {
+              const option = document.createElement('option');
+              option.value = cam.cameraId;
+              option.textContent = `${cam.cameraName} (${cam.location}) - अंदर: ${cam.remainingCount}`;
+              cameraSelect.appendChild(option);
+            });
+            
+            cameraSelect.disabled = false;
+            updateApiStatus(true);
+          }
+        } catch (err) {
+          showError('कैमरा डेटा लोड करने में त्रुटि');
+          updateApiStatus(false);
+        } finally {
+          refreshBtn.disabled = false;
+        }
+      }
+
+      async function syncWithAPI() {
+        if (!selectedCameraId) return;
+
+        try {
+          const response = await fetch(`${API_BASE_URL}/stats/${selectedCameraId}`);
+          if (!response.ok) throw new Error('Sync failed');
+          
+          const data = await response.json();
+          
+          if (data.success && data.data) {
+            liveSpan.innerText = data.data.liveCount;
+            totalSpan.innerText = data.data.totalCount;
+            remainingSpan.innerText = data.data.remainingCount;
+            lastSyncSpan.innerText = formatTime();
+          }
+        } catch (err) {
+          console.warn('Sync failed');
+        }
+      }
+
+      async function sendCheckIn(count) {
+        if (!selectedCameraId || count <= 0) return;
+
+        try {
+          const response = await fetch(`${API_BASE_URL}/checkin`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              cameraId: selectedCameraId,
+              count: count
+            })
+          });
+
+          if (!response.ok) throw new Error('Check-in failed');
+          
+          const data = await response.json();
+          if (data.success) {
+            liveSpan.innerText = data.data.liveCount;
+            totalSpan.innerText = data.data.totalCount;
+            remainingSpan.innerText = data.data.remainingCount;
+            lastSyncSpan.innerText = formatTime();
+            
+            videoContainer.style.borderColor = '#f9a61a';
+            setTimeout(() => {
+              videoContainer.style.borderColor = '#1e7920';
+            }, 300);
+          }
+        } catch (err) {
+          showError('चेक-इन विफल');
+        }
+      }
+
+      async function testCamera() {
+        try {
+          hideError();
+          
+          if (cameraStream) {
+            cameraStream.getTracks().forEach(track => track.stop());
+          }
+
+          const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { 
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+              facingMode: 'environment'
+            }, 
+            audio: false 
+          });
+          
+          cameraStream = stream;
+          video.srcObject = stream;
+          
+          video.onplaying = () => {
+            placeholder.style.display = 'none';
+            startBtn.disabled = false;
+          };
+          
+          await video.play();
+          return true;
+        } catch (err) {
+          showError('कैमरा त्रुटि: ' + err.message);
+          return false;
+        }
+      }
+
+      async function loadModel() {
+        try {
+          model = await cocoSsd.load({ base: 'mobilenet_v2' });
+          return true;
+        } catch (err) {
+          showError('AI मॉडल लोड करने में त्रुटि');
+          return false;
+        }
+      }
+
+      function getBoxCenter(box) {
+        return { x: box[0] + box[2]/2, y: box[1] + box[3]/2 };
+      }
+
+      function calculateDistance(p1, p2) {
+        return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+      }
+
+      function findMatchingPerson(currentBox, trackedPersons) {
+        const currentCenter = getBoxCenter(currentBox);
+        let bestMatch = null;
+        let bestDistance = DISTANCE_THRESHOLD;
+        
+        for (let [id, data] of trackedPersons) {
+          const distance = calculateDistance(currentCenter, data.center);
+          if (distance < bestDistance) {
+            bestDistance = distance;
+            bestMatch = id;
+          }
+        }
+        
+        return bestMatch;
+      }
+
+      function cleanupOldData() {
+        const now = Date.now();
+        let deletedCount = 0;
+        
+        for (let [id, data] of trackedPersons) {
+          if (now - data.lastSeen > MAX_TRACKING_TIME) {
+            trackedPersons.delete(id);
+            deletedCount++;
+          }
+        }
+        
+        for (let [id, entry] of recentEntries) {
+          if (now - entry.timestamp > 5000) {
+            recentEntries.delete(id);
+          }
+        }
+        
+        if (deletedCount > 0) {
+          console.log(`🧹 Auto-deleted ${deletedCount} old persons after 15s`);
+        }
+      }
+
+      setInterval(cleanupOldData, 5000);
+
+      function updateTracking(currentPersons) {
+        const now = Date.now();
+        const matchedIds = new Set();
+        const newPersons = [];
+        const newlyVerified = [];
+        
+        for (let person of currentPersons) {
+          const matchId = findMatchingPerson(person.bbox, trackedPersons);
+          
+          if (matchId !== null) {
+            const data = trackedPersons.get(matchId);
+            data.lastBox = person.bbox;
+            data.center = getBoxCenter(person.bbox);
+            data.lastSeen = now;
+            matchedIds.add(matchId);
+          } else {
+            newPersons.push(person);
+          }
+        }
+        
+        for (let [id, data] of trackedPersons) {
+          if (!matchedIds.has(id)) {
+            if (now - data.lastSeen > MAX_TRACKING_TIME) {
+              trackedPersons.delete(id);
+            }
+          }
+        }
+        
+        for (let person of newPersons) {
+          const id = nextPersonId++;
+          trackedPersons.set(id, {
+            lastBox: person.bbox,
+            center: getBoxCenter(person.bbox),
+            firstSeen: now,
+            lastSeen: now,
+            detectionCount: 1
+          });
+        }
+        
+        for (let [id, data] of trackedPersons) {
+          if (!verifiedPersons.has(id)) {
+            const timeInFrame = now - data.firstSeen;
+            if (timeInFrame >= VERIFICATION_TIME) {
+              verifiedPersons.add(id);
+              newlyVerified.push(id);
+            }
+          }
+        }
+        
+        if (newlyVerified.length > 0) {
+          if (now - lastApiCall > API_COOLDOWN) {
+            sendCheckIn(newlyVerified.length);
+            lastApiCall = now;
+          } else {
+            pendingCount += newlyVerified.length;
+          }
+        }
+        
+        if (pendingCount > 0 && now - lastApiCall > API_COOLDOWN) {
+          sendCheckIn(pendingCount);
+          lastApiCall = now;
+          pendingCount = 0;
+        }
+        
+        return trackedPersons.size;
+      }
+
+      async function detectPersons() {
+        if (!model || !video.videoWidth) return [];
+        
+        try {
+          const predictions = await model.detect(video);
+          return predictions.filter(p => p.class === 'person' && p.score >= CONFIDENCE);
+        } catch (err) {
+          return [];
+        }
+      }
+
+      function drawDetections(persons) {
+        const now = Date.now();
+        
+        if (canvas.width !== video.clientWidth || canvas.height !== video.clientHeight) {
+          canvas.width = video.clientWidth;
+          canvas.height = video.clientHeight;
+        }
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const scaleX = canvas.width / video.videoWidth;
+        const scaleY = canvas.height / video.videoHeight;
+
+        persons.forEach((person) => {
+          const [x, y, w, h] = person.bbox;
+          const score = (person.score * 100).toFixed(0);
+          
+          const scaledX = x * scaleX;
+          const scaledY = y * scaleY;
+          const scaledW = w * scaleX;
+          const scaledH = h * scaleY;
+
+          const center = getBoxCenter(person.bbox);
+          let isVerified = false;
+          let timeLeft = 0;
+          
+          for (let [id, data] of trackedPersons) {
+            const distance = calculateDistance(center, data.center);
+            if (distance < 30) {
+              if (verifiedPersons.has(id)) {
+                isVerified = true;
+              } else {
+                timeLeft = Math.max(0, VERIFICATION_TIME - (now - data.firstSeen));
+              }
+              break;
+            }
+          }
+
+          let boxColor, label;
+          
+          if (isVerified) {
+            boxColor = '#1e7920';
+            label = '✓ प्रवेश';
+          } else if (timeLeft > 0) {
+            boxColor = '#f9a61a';
+            label = `${Math.ceil(timeLeft/1000)}s शेष`;
+          } else {
+            boxColor = '#ff4444';
+            label = 'नया';
+          }
+
+          ctx.strokeStyle = boxColor;
+          ctx.lineWidth = 3;
+          ctx.shadowColor = boxColor;
+          ctx.shadowBlur = 10;
+          ctx.strokeRect(scaledX, scaledY, scaledW, scaledH);
+          
+          ctx.shadowBlur = 6;
+          ctx.shadowColor = '#000';
+          ctx.font = 'bold 14px Poppins, sans-serif';
+          ctx.fillStyle = boxColor;
+          ctx.fillText(label, scaledX, scaledY > 25 ? scaledY - 8 : scaledY + 25);
+          
+          ctx.strokeStyle = '#f9a61a';
+          ctx.lineWidth = 2;
+          ctx.shadowBlur = 0;
+          
+          ctx.beginPath();
+          ctx.moveTo(scaledX, scaledY + 15);
+          ctx.lineTo(scaledX, scaledY);
+          ctx.lineTo(scaledX + 15, scaledY);
+          ctx.stroke();
+          
+          ctx.beginPath();
+          ctx.moveTo(scaledX + scaledW - 15, scaledY);
+          ctx.lineTo(scaledX + scaledW, scaledY);
+          ctx.lineTo(scaledX + scaledW, scaledY + 15);
+          ctx.stroke();
+        });
+        
+        ctx.font = 'bold 20px Poppins, sans-serif';
+        ctx.fillStyle = 'white';
+        ctx.shadowBlur = 10;
+        ctx.fillText(`लाइव: ${persons.length}`, 20, 50);
+        ctx.font = 'bold 16px Poppins, sans-serif';
+        ctx.fillStyle = '#f9a61a';
+        ctx.fillText(`सत्यापित: ${verifiedPersons.size}`, 20, 80);
+      }
+
+      async function detectLoop() {
+        if (!detectionActive || !video.videoWidth || !model) {
+          animationFrame = requestAnimationFrame(detectLoop);
+          return;
+        }
+
+        const persons = await detectPersons();
+        updateTracking(persons);
+        
+        drawDetections(persons);
+        liveSpan.innerText = persons.length;
+
+        animationFrame = requestAnimationFrame(detectLoop);
+      }
+
+      function startDetection() {
+        if (!video.srcObject) {
+          showError('कृपया पहले कैमरा जांचें');
+          return;
+        }
+        if (!model) {
+          showError('मॉडल लोड हो रहा है');
+          return;
+        }
+        
+        trackedPersons.clear();
+        verifiedPersons.clear();
+        recentEntries.clear();
+        nextPersonId = 0;
+        pendingCount = 0;
+        
+        detectionActive = true;
+        detectLoop();
+        videoContainer.classList.add('active');
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+        hideError();
+      }
+
+      function stopDetection() {
+        detectionActive = false;
+        if (animationFrame) {
+          cancelAnimationFrame(animationFrame);
+          animationFrame = null;
+        }
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        videoContainer.classList.remove('active');
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+      }
+
+      async function init() {
+        await loadModel();
+        await fetchCameras();
+        
+        apiSyncInterval = setInterval(syncWithAPI, 20000);
+        
+        cameraSelect.addEventListener('change', (e) => {
+          selectedCameraId = e.target.value;
+          if (selectedCameraId) syncWithAPI();
+        });
+
+        refreshBtn.addEventListener('click', fetchCameras);
+        testCameraBtn.addEventListener('click', testCamera);
+        startBtn.addEventListener('click', startDetection);
+        stopBtn.addEventListener('click', stopDetection);
+        
+        manualCheckinBtn.addEventListener('click', () => {
+          const count = parseInt(manualCount.value);
+          if (count > 0) sendCheckIn(count);
+        });
+
+        window.addEventListener('beforeunload', () => {
+          if (apiSyncInterval) clearInterval(apiSyncInterval);
+          if (cameraStream) cameraStream.getTracks().forEach(t => t.stop());
+          if (animationFrame) cancelAnimationFrame(animationFrame);
+        });
+      }
+
+      window.addEventListener('load', init);
+    })();
+  </script>
+</body>
+</html>

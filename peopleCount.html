@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Person Counter · Dual Camera System</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      background: linear-gradient(145deg, #0a1420 0%, #1a2c3e 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .dashboard {
+      max-width: 1800px;
+      width: 100%;
+      margin: 0 auto;
+      background: rgba(18, 28, 40, 0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 40px;
+      padding: 24px;
+      box-shadow: 0 30px 50px rgba(0, 0, 0, 0.6);
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      padding: 0 12px;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    .title-section {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .icon-badge {
+      background: #2f80ed;
+      width: 50px;
+      height: 50px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      color: white;
+      box-shadow: 0 10px 20px -5px #2f80ed80;
+    }
+
+    .title-section h1 {
+      font-size: 28px;
+      font-weight: 600;
+      color: white;
+    }
+
+    .title-section .sub {
+      color: #9bb7d4;
+      font-size: 15px;
+      margin-top: 4px;
+    }
+
+    .camera-selector {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 10px 20px;
+      border-radius: 50px;
+      border: 1px solid rgba(255,255,255,0.1);
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .camera-selector select {
+      background: #1e2f3f;
+      color: white;
+      border: 1px solid #3d546e;
+      padding: 10px 20px;
+      border-radius: 30px;
+      font-size: 16px;
+      min-width: 250px;
+      cursor: pointer;
+    }
+
+    .camera-selector select:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .refresh-btn {
+      background: #2f80ed;
+      color: white;
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .refresh-btn:hover {
+      transform: rotate(180deg);
+    }
+
+    .refresh-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .dual-view {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    .camera-card {
+      background: rgba(18, 28, 40, 0.9);
+      border-radius: 32px;
+      padding: 20px;
+      border: 1px solid #2c4058;
+    }
+
+    .camera-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .camera-header h3 {
+      color: white;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .camera-header h3 i {
+      color: #f2c94c;
+    }
+
+    .camera-type-badge {
+      padding: 5px 15px;
+      border-radius: 30px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .badge-checkin {
+      background: #27ae60;
+      color: white;
+    }
+
+    .badge-checkout {
+      background: #e74c3c;
+      color: white;
+    }
+
+    .video-wrapper {
+      position: relative;
+      background: #0e1a26;
+      border-radius: 24px;
+      overflow: hidden;
+      aspect-ratio: 16 / 9;
+      border: 2px solid rgba(255, 215, 0, 0.2);
+      margin-bottom: 15px;
+    }
+
+    .video-wrapper.active {
+      border: 2px solid #f2c94c;
+      box-shadow: 0 0 0 3px #f2c94c20;
+    }
+
+    .video-wrapper video, .video-wrapper canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .video-wrapper canvas {
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .video-placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #446688;
+      background: #0b1420;
+      z-index: 1;
+      gap: 12px;
+      flex-direction: column;
+    }
+
+    .camera-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .stat-box {
+      background: #1a2c3e;
+      border-radius: 16px;
+      padding: 15px 10px;
+      text-align: center;
+    }
+
+    .stat-label {
+      color: #9bb7d4;
+      font-size: 12px;
+      margin-bottom: 5px;
+    }
+
+    .stat-value {
+      color: #f2c94c;
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .stat-value.total {
+      color: #27ae60;
+    }
+
+    .stat-value.remaining {
+      color: #2f80ed;
+    }
+
+    .camera-controls {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .btn {
+      flex: 1;
+      background: #2b3f56;
+      border: none;
+      padding: 12px;
+      border-radius: 30px;
+      font-size: 16px;
+      font-weight: 500;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.15s;
+      border: 1px solid #3d546e;
+    }
+
+    .btn-primary {
+      background: #f2c94c;
+      color: #0f212f;
+      border: none;
+      font-weight: 600;
+    }
+
+    .btn-success {
+      background: #27ae60;
+    }
+
+    .btn-danger {
+      background: #e74c3c;
+    }
+
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .summary-panel {
+      background: #0f212f;
+      border-radius: 30px;
+      padding: 20px;
+      margin-top: 20px;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .summary-item {
+      text-align: center;
+    }
+
+    .summary-label {
+      color: #9bb7d4;
+      font-size: 14px;
+    }
+
+    .summary-value {
+      color: white;
+      font-size: 32px;
+      font-weight: 700;
+    }
+
+    .api-status {
+      color: #7f9fc7;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .api-status i {
+      color: #27ae60;
+    }
+
+    .error-message {
+      color: #ff6b6b;
+      text-align: center;
+      padding: 10px;
+      margin-top: 10px;
+      font-size: 14px;
+      background: rgba(255, 107, 107, 0.1);
+      border-radius: 12px;
+    }
+  </style>
+</head>
+<body>
+<div class="dashboard">
+  <div class="header">
+    <div class="title-section">
+      <div class="icon-badge"><i class="fas fa-camera-retro"></i></div>
+      <div>
+        <h1>personAware • dual camera system</h1>
+        <div class="sub">check-in (left) · check-out (right) · auto-sync every 20s</div>
+      </div>
+    </div>
+    
+    <div class="camera-selector">
+      <select id="cameraSelect" disabled>
+        <option value="">Loading cameras...</option>
+      </select>
+      <button class="refresh-btn" id="refreshCameras" title="Refresh cameras">
+        <i class="fas fa-sync-alt"></i>
+      </button>
+    </div>
+  </div>
+
+  <div class="dual-view">
+    <!-- CHECK-IN CAMERA -->
+    <div class="camera-card" id="checkinCard">
+      <div class="camera-header">
+        <h3><i class="fas fa-sign-in-alt"></i> <span id="checkinCameraName">Check-In Camera</span></h3>
+        <span class="camera-type-badge badge-checkin">CHECK-IN</span>
+      </div>
+      
+      <div class="video-wrapper" id="checkinVideoWrapper">
+        <video id="checkinVideo" autoplay playsinline></video>
+        <canvas id="checkinCanvas"></canvas>
+        <div class="video-placeholder" id="checkinPlaceholder">
+          <i class="fas fa-video" style="font-size: 48px; opacity: 0.4;"></i>
+          <span>Select camera & start</span>
+        </div>
+      </div>
+
+      <div class="camera-stats">
+        <div class="stat-box">
+          <div class="stat-label">LIVE</div>
+          <div class="stat-value" id="checkinLiveCount">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">TOTAL</div>
+          <div class="stat-value total" id="checkinTotalCount">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">REMAINING</div>
+          <div class="stat-value remaining" id="checkinRemainingCount">0</div>
+        </div>
+      </div>
+
+      <div class="camera-controls">
+        <button class="btn btn-success" id="startCheckinBtn" disabled>
+          <i class="fas fa-play"></i> Start
+        </button>
+        <button class="btn" id="stopCheckinBtn" disabled>
+          <i class="fas fa-stop"></i> Stop
+        </button>
+        <button class="btn" id="testCheckinBtn">
+          <i class="fas fa-camera"></i> Test
+        </button>
+      </div>
+    </div>
+
+    <!-- CHECK-OUT CAMERA -->
+    <div class="camera-card" id="checkoutCard">
+      <div class="camera-header">
+        <h3><i class="fas fa-sign-out-alt"></i> <span id="checkoutCameraName">Check-Out Camera</span></h3>
+        <span class="camera-type-badge badge-checkout">CHECK-OUT</span>
+      </div>
+      
+      <div class="video-wrapper" id="checkoutVideoWrapper">
+        <video id="checkoutVideo" autoplay playsinline></video>
+        <canvas id="checkoutCanvas"></canvas>
+        <div class="video-placeholder" id="checkoutPlaceholder">
+          <i class="fas fa-video" style="font-size: 48px; opacity: 0.4;"></i>
+          <span>Select camera & start</span>
+        </div>
+      </div>
+
+      <div class="camera-stats">
+        <div class="stat-box">
+          <div class="stat-label">LIVE</div>
+          <div class="stat-value" id="checkoutLiveCount">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">TOTAL</div>
+          <div class="stat-value total" id="checkoutTotalCount">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">REMAINING</div>
+          <div class="stat-value remaining" id="checkoutRemainingCount">0</div>
+        </div>
+      </div>
+
+      <div class="camera-controls">
+        <button class="btn btn-success" id="startCheckoutBtn" disabled>
+          <i class="fas fa-play"></i> Start
+        </button>
+        <button class="btn" id="stopCheckoutBtn" disabled>
+          <i class="fas fa-stop"></i> Stop
+        </button>
+        <button class="btn" id="testCheckoutBtn">
+          <i class="fas fa-camera"></i> Test
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMMARY PANEL -->
+  <div class="summary-panel">
+    <div class="summary-item">
+      <div class="summary-label">TOTAL INSIDE</div>
+      <div class="summary-value" id="totalInside">0</div>
+    </div>
+    <div class="summary-item">
+      <div class="summary-label">TOTAL ENTRIES</div>
+      <div class="summary-value" id="totalEntries">0</div>
+    </div>
+    <div class="summary-item">
+      <div class="summary-label">LAST SYNC</div>
+      <div class="summary-value" id="lastSync">—</div>
+    </div>
+    <div class="api-status" id="apiStatus">
+      <i class="fas fa-check-circle"></i> API Connected
+    </div>
+  </div>
+
+  <div id="errorDisplay" class="error-message"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.0.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.2/dist/coco-ssd.min.js"></script>
+
+<script>
+  (function() {
+    // API Configuration
+    const API_BASE_URL = 'http://localhost:5000/api/crowd';
+    
+    // DOM Elements - Checkin
+    const checkinVideo = document.getElementById('checkinVideo');
+    const checkinCanvas = document.getElementById('checkinCanvas');
+    const checkinCtx = checkinCanvas.getContext('2d');
+    const checkinPlaceholder = document.getElementById('checkinPlaceholder');
+    const checkinWrapper = document.getElementById('checkinVideoWrapper');
+    const checkinLiveSpan = document.getElementById('checkinLiveCount');
+    const checkinTotalSpan = document.getElementById('checkinTotalCount');
+    const checkinRemainingSpan = document.getElementById('checkinRemainingCount');
+    const checkinCameraNameSpan = document.getElementById('checkinCameraName');
+    const startCheckinBtn = document.getElementById('startCheckinBtn');
+    const stopCheckinBtn = document.getElementById('stopCheckinBtn');
+    const testCheckinBtn = document.getElementById('testCheckinBtn');
+
+    // DOM Elements - Checkout
+    const checkoutVideo = document.getElementById('checkoutVideo');
+    const checkoutCanvas = document.getElementById('checkoutCanvas');
+    const checkoutCtx = checkoutCanvas.getContext('2d');
+    const checkoutPlaceholder = document.getElementById('checkoutPlaceholder');
+    const checkoutWrapper = document.getElementById('checkoutVideoWrapper');
+    const checkoutLiveSpan = document.getElementById('checkoutLiveCount');
+    const checkoutTotalSpan = document.getElementById('checkoutTotalCount');
+    const checkoutRemainingSpan = document.getElementById('checkoutRemainingCount');
+    const checkoutCameraNameSpan = document.getElementById('checkoutCameraName');
+    const startCheckoutBtn = document.getElementById('startCheckoutBtn');
+    const stopCheckoutBtn = document.getElementById('stopCheckoutBtn');
+    const testCheckoutBtn = document.getElementById('testCheckoutBtn');
+
+    // DOM Elements - Common
+    const cameraSelect = document.getElementById('cameraSelect');
+    const refreshBtn = document.getElementById('refreshCameras');
+    const totalInsideSpan = document.getElementById('totalInside');
+    const totalEntriesSpan = document.getElementById('totalEntries');
+    const lastSyncSpan = document.getElementById('lastSync');
+    const apiStatusSpan = document.getElementById('apiStatus');
+    const errorDisplay = document.getElementById('errorDisplay');
+
+    // State
+    let model = null;
+    let cameras = [];
+    let selectedCameraId = null;
+    let checkinActive = false;
+    let checkoutActive = false;
+    let checkinAnimationFrame = null;
+    let checkoutAnimationFrame = null;
+    let checkinStream = null;
+    let checkoutStream = null;
+    let apiSyncInterval = null;
+    
+    // Detection state per camera
+    const cameraState = {
+      checkin: {
+        activePersons: new Map(),
+        recentEntries: new Map(),
+        nextPersonId: 0,
+        lastCount: 0
+      },
+      checkout: {
+        activePersons: new Map(),
+        recentEntries: new Map(),
+        nextPersonId: 0,
+        lastCount: 0
+      }
+    };
+
+    const confidenceThreshold = 0.7;
+    const ENTRY_COOLDOWN = 3000;
+
+    // Helper Functions
+    function showError(msg) {
+      errorDisplay.innerText = msg;
+      console.error(msg);
+    }
+
+    function clearError() {
+      errorDisplay.innerText = '';
+    }
+
+    function updateApiStatus(connected) {
+      if (connected) {
+        apiStatusSpan.innerHTML = '<i class="fas fa-check-circle" style="color: #27ae60;"></i> API Connected';
+      } else {
+        apiStatusSpan.innerHTML = '<i class="fas fa-exclamation-circle" style="color: #e74c3c;"></i> API Disconnected';
+      }
+    }
+
+    function formatTime() {
+      const now = new Date();
+      return now.toLocaleTimeString();
+    }
+
+    // API Calls
+    async function fetchCameras() {
+      try {
+        cameraSelect.disabled = true;
+        refreshBtn.disabled = true;
+        
+        const response = await fetch(`${API_BASE_URL}/all-stats`);
+        if (!response.ok) throw new Error('Failed to fetch cameras');
+        
+        const data = await response.json();
+        
+        if (data.success && data.data) {
+          cameras = data.data;
+          
+          // Populate select dropdown
+          cameraSelect.innerHTML = '<option value="">Select a camera</option>';
+          cameras.forEach(cam => {
+            const option = document.createElement('option');
+            option.value = cam.cameraId;
+            option.textContent = `${cam.cameraName} (${cam.location}) - Live: ${cam.liveCount}`;
+            cameraSelect.appendChild(option);
+          });
+          
+          cameraSelect.disabled = false;
+          updateApiStatus(true);
+        }
+      } catch (err) {
+        showError('Failed to fetch cameras: ' + err.message);
+        updateApiStatus(false);
+      } finally {
+        refreshBtn.disabled = false;
+      }
+    }
+
+    async function syncWithAPI() {
+      if (!selectedCameraId) return;
+
+      try {
+        // Get current stats for both cameras (they share the same camera ID in this demo)
+        const response = await fetch(`${API_BASE_URL}/stats/${selectedCameraId}`);
+        if (!response.ok) throw new Error('Failed to fetch stats');
+        
+        const data = await response.json();
+        
+        if (data.success && data.data) {
+          // Update checkin display
+          checkinLiveSpan.innerText = data.data.liveCount;
+          checkinTotalSpan.innerText = data.data.totalCount;
+          checkinRemainingSpan.innerText = data.data.remainingCount;
+          
+          // Update checkout display (same data for demo)
+          checkoutLiveSpan.innerText = data.data.liveCount;
+          checkoutTotalSpan.innerText = data.data.totalCount;
+          checkoutRemainingSpan.innerText = data.data.remainingCount;
+          
+          // Update totals
+          totalEntriesSpan.innerText = data.data.totalCount;
+          totalInsideSpan.innerText = data.data.remainingCount;
+          
+          lastSyncSpan.innerText = formatTime();
+        }
+      } catch (err) {
+        console.warn('Sync failed:', err);
+        updateApiStatus(false);
+      }
+    }
+
+    async function sendCheckIn(count) {
+      if (!selectedCameraId) return;
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/checkin`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            cameraId: selectedCameraId,
+            count: count
+          })
+        });
+
+        if (!response.ok) throw new Error('Check-in failed');
+        
+        const data = await response.json();
+        if (data.success) {
+          // Update UI with response data
+          checkinLiveSpan.innerText = data.data.liveCount;
+          checkinTotalSpan.innerText = data.data.totalCount;
+          checkinRemainingSpan.innerText = data.data.remainingCount;
+          
+          // After check-in, live count starts from 0 for next detection
+          cameraState.checkin.lastCount = 0;
+        }
+      } catch (err) {
+        console.warn('Check-in API error:', err);
+      }
+    }
+
+    async function sendCheckOut(count) {
+      if (!selectedCameraId) return;
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/checkout`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            cameraId: selectedCameraId,
+            count: count
+          })
+        });
+
+        if (!response.ok) throw new Error('Check-out failed');
+        
+        const data = await response.json();
+        if (data.success) {
+          // Update UI with response data
+          checkoutLiveSpan.innerText = data.data.liveCount;
+          checkoutTotalSpan.innerText = data.data.totalCount;
+          checkoutRemainingSpan.innerText = data.data.remainingCount;
+        }
+      } catch (err) {
+        console.warn('Check-out API error:', err);
+      }
+    }
+
+    // Camera Functions
+    async function testCamera(videoElement, placeholder, type) {
+      try {
+        clearError();
+        
+        if (type === 'checkin' && checkinStream) {
+          checkinStream.getTracks().forEach(track => track.stop());
+        }
+        if (type === 'checkout' && checkoutStream) {
+          checkoutStream.getTracks().forEach(track => track.stop());
+        }
+
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: {
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            facingMode: 'user'
+          }, 
+          audio: false 
+        });
+        
+        if (type === 'checkin') {
+          checkinStream = stream;
+          checkinVideo.srcObject = stream;
+          checkinVideo.onplaying = () => {
+            placeholder.style.display = 'none';
+            startCheckinBtn.disabled = false;
+          };
+        } else {
+          checkoutStream = stream;
+          checkoutVideo.srcObject = stream;
+          checkoutVideo.onplaying = () => {
+            placeholder.style.display = 'none';
+            startCheckoutBtn.disabled = false;
+          };
+        }
+        
+        await videoElement.play();
+        return true;
+      } catch (err) {
+        showError(`Camera ${type} error: ` + err.message);
+        return false;
+      }
+    }
+
+    // Load AI Model
+    async function loadModel() {
+      try {
+        model = await cocoSsd.load({ base: 'mobilenet_v2' });
+        console.log('Model loaded');
+        return true;
+      } catch (err) {
+        showError('Failed to load AI model: ' + err.message);
+        return false;
+      }
+    }
+
+    // Detection Functions
+    function calculateIoU(box1, box2) {
+      const [x1, y1, w1, h1] = box1;
+      const [x2, y2, w2, h2] = box2;
+      
+      const xLeft = Math.max(x1, x2);
+      const yTop = Math.max(y1, y2);
+      const xRight = Math.min(x1 + w1, x2 + w2);
+      const yBottom = Math.min(y1 + h1, y2 + h2);
+      
+      if (xRight < xLeft || yBottom < yTop) return 0;
+      
+      const intersectionArea = (xRight - xLeft) * (yBottom - yTop);
+      const box1Area = w1 * h1;
+      const box2Area = w2 * h2;
+      
+      return intersectionArea / (box1Area + box2Area - intersectionArea);
+    }
+
+    function getBoxCenter(box) {
+      const [x, y, w, h] = box;
+      return { x: x + w/2, y: y + h/2 };
+    }
+
+    function trackPersons(currentPersons, state, type) {
+      const now = Date.now();
+      const currentBoxes = currentPersons.map(p => p.bbox);
+      const matchedBoxes = new Set();
+      const newActivePersons = new Map();
+      let newEntries = 0;
+      
+      // Match existing persons
+      for (let [personId, personData] of state.activePersons) {
+        let bestMatch = -1;
+        let bestIoU = 0.3;
+        
+        for (let i = 0; i < currentBoxes.length; i++) {
+          if (matchedBoxes.has(i)) continue;
+          
+          const iou = calculateIoU(personData.lastBox, currentBoxes[i]);
+          if (iou > bestIoU) {
+            bestIoU = iou;
+            bestMatch = i;
+          }
+        }
+        
+        if (bestMatch !== -1) {
+          newActivePersons.set(personId, {
+            lastBox: currentBoxes[bestMatch],
+            firstSeen: personData.firstSeen,
+            lastSeen: now
+          });
+          matchedBoxes.add(bestMatch);
+        }
+      }
+      
+      // Check for new persons
+      for (let i = 0; i < currentBoxes.length; i++) {
+        if (!matchedBoxes.has(i)) {
+          const center = getBoxCenter(currentBoxes[i]);
+          let isNew = true;
+          
+          for (let [recentId, recentData] of state.recentEntries) {
+            const distance = calculateDistance(center, recentData.center);
+            if (distance < 100 && (now - recentData.timestamp) < ENTRY_COOLDOWN) {
+              isNew = false;
+              break;
+            }
+          }
+          
+          if (isNew) {
+            const newId = state.nextPersonId++;
+            newActivePersons.set(newId, {
+              lastBox: currentBoxes[i],
+              firstSeen: now,
+              lastSeen: now
+            });
+            
+            state.recentEntries.set(newId, {
+              center: getBoxCenter(currentBoxes[i]),
+              timestamp: now
+            });
+            
+            newEntries++;
+          }
+        }
+      }
+      
+      // Clean up old entries
+      for (let [recentId, recentData] of state.recentEntries) {
+        if (now - recentData.timestamp > ENTRY_COOLDOWN) {
+          state.recentEntries.delete(recentId);
+        }
+      }
+      
+      state.activePersons = newActivePersons;
+      
+      // Send to API if new entries detected
+      if (newEntries > 0) {
+        if (type === 'checkin') {
+          sendCheckIn(newEntries);
+        } else {
+          sendCheckOut(newEntries);
+        }
+      }
+      
+      return newActivePersons.size;
+    }
+
+    function calculateDistance(point1, point2) {
+      return Math.sqrt(Math.pow(point2.x - point1.x, 2) + Math.pow(point2.y - point1.y, 2));
+    }
+
+    async function detectPersons(videoElement) {
+      if (!model || !videoElement.videoWidth || !videoElement.videoHeight) return [];
+
+      try {
+        const predictions = await model.detect(videoElement);
+        return predictions.filter(pred => 
+          pred.class === 'person' && pred.score >= confidenceThreshold
+        );
+      } catch (err) {
+        return [];
+      }
+    }
+
+    function drawDetections(persons, canvas, ctx, video, activeCount) {
+      if (canvas.width !== video.clientWidth || canvas.height !== video.clientHeight) {
+        canvas.width = video.clientWidth;
+        canvas.height = video.clientHeight;
+      }
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      const scaleX = canvas.width / video.videoWidth;
+      const scaleY = canvas.height / video.videoHeight;
+
+      persons.forEach((person, index) => {
+        const [x, y, w, h] = person.bbox;
+        const score = person.score.toFixed(2);
+        
+        const scaledX = x * scaleX;
+        const scaledY = y * scaleY;
+        const scaledW = w * scaleX;
+        const scaledH = h * scaleY;
+
+        const boxColor = index < activeCount ? '#27ae60' : '#f2c94c';
+
+        ctx.strokeStyle = boxColor;
+        ctx.lineWidth = 3;
+        ctx.shadowColor = boxColor;
+        ctx.shadowBlur = 10;
+        ctx.strokeRect(scaledX, scaledY, scaledW, scaledH);
+        
+        ctx.shadowBlur = 6;
+        ctx.shadowColor = '#000000';
+        ctx.font = 'bold 16px Inter, sans-serif';
+        ctx.fillStyle = boxColor;
+        
+        const label = index < activeCount ? `NEW ${score}` : `PERSON ${score}`;
+        ctx.fillText(label, scaledX, scaledY > 20 ? scaledY - 6 : scaledY + 24);
+        
+        ctx.shadowBlur = 0;
+      });
+    }
+
+    // Detection Loops
+    async function checkinDetectLoop() {
+      if (!checkinActive || !checkinVideo.videoWidth || !model) {
+        if (checkinActive) {
+          checkinAnimationFrame = requestAnimationFrame(checkinDetectLoop);
+        }
+        return;
+      }
+
+      const persons = await detectPersons(checkinVideo);
+      const activeCount = trackPersons(persons, cameraState.checkin, 'checkin');
+      
+      drawDetections(persons, checkinCanvas, checkinCtx, checkinVideo, activeCount);
+      
+      // Update live count display (only shows current frame count)
+      checkinLiveSpan.innerText = persons.length;
+
+      checkinAnimationFrame = requestAnimationFrame(checkinDetectLoop);
+    }
+
+    async function checkoutDetectLoop() {
+      if (!checkoutActive || !checkoutVideo.videoWidth || !model) {
+        if (checkoutActive) {
+          checkoutAnimationFrame = requestAnimationFrame(checkoutDetectLoop);
+        }
+        return;
+      }
+
+      const persons = await detectPersons(checkoutVideo);
+      const activeCount = trackPersons(persons, cameraState.checkout, 'checkout');
+      
+      drawDetections(persons, checkoutCanvas, checkoutCtx, checkoutVideo, activeCount);
+      
+      // Update live count display
+      checkoutLiveSpan.innerText = persons.length;
+
+      checkoutAnimationFrame = requestAnimationFrame(checkoutDetectLoop);
+    }
+
+    // Start/Stop Functions
+    function startCheckin() {
+      if (!checkinVideo.srcObject) {
+        showError('Please test check-in camera first');
+        return;
+      }
+      if (!model) {
+        showError('Model still loading');
+        return;
+      }
+      
+      checkinActive = true;
+      checkinDetectLoop();
+      checkinWrapper.classList.add('active');
+      startCheckinBtn.disabled = true;
+      stopCheckinBtn.disabled = false;
+    }
+
+    function stopCheckin() {
+      checkinActive = false;
+      if (checkinAnimationFrame) {
+        cancelAnimationFrame(checkinAnimationFrame);
+        checkinAnimationFrame = null;
+      }
+      checkinCtx.clearRect(0, 0, checkinCanvas.width, checkinCanvas.height);
+      checkinWrapper.classList.remove('active');
+      startCheckinBtn.disabled = false;
+      stopCheckinBtn.disabled = true;
+    }
+
+    function startCheckout() {
+      if (!checkoutVideo.srcObject) {
+        showError('Please test check-out camera first');
+        return;
+      }
+      if (!model) {
+        showError('Model still loading');
+        return;
+      }
+      
+      checkoutActive = true;
+      checkoutDetectLoop();
+      checkoutWrapper.classList.add('active');
+      startCheckoutBtn.disabled = true;
+      stopCheckoutBtn.disabled = false;
+    }
+
+    function stopCheckout() {
+      checkoutActive = false;
+      if (checkoutAnimationFrame) {
+        cancelAnimationFrame(checkoutAnimationFrame);
+        checkoutAnimationFrame = null;
+      }
+      checkoutCtx.clearRect(0, 0, checkoutCanvas.width, checkoutCanvas.height);
+      checkoutWrapper.classList.remove('active');
+      startCheckoutBtn.disabled = false;
+      stopCheckoutBtn.disabled = true;
+    }
+
+    // Initialize
+    async function init() {
+      // Load model
+      loadModel();
+      
+      // Fetch cameras
+      await fetchCameras();
+      
+      // Set up API sync every 20 seconds
+      apiSyncInterval = setInterval(syncWithAPI, 20000);
+      
+      // Event Listeners
+      cameraSelect.addEventListener('change', (e) => {
+        selectedCameraId = e.target.value;
+        if (selectedCameraId) {
+          const camera = cameras.find(c => c.cameraId === selectedCameraId);
+          if (camera) {
+            checkinCameraNameSpan.innerText = camera.cameraName;
+            checkoutCameraNameSpan.innerText = camera.cameraName;
+            
+            // Update display with current stats
+            checkinLiveSpan.innerText = camera.liveCount;
+            checkinTotalSpan.innerText = camera.totalCount;
+            checkinRemainingSpan.innerText = camera.remainingCount;
+            checkoutLiveSpan.innerText = camera.liveCount;
+            checkoutTotalSpan.innerText = camera.totalCount;
+            checkoutRemainingSpan.innerText = camera.remainingCount;
+            totalEntriesSpan.innerText = camera.totalCount;
+            totalInsideSpan.innerText = camera.remainingCount;
+          }
+        }
+      });
+
+      refreshBtn.addEventListener('click', fetchCameras);
+
+      // Check-in controls
+      testCheckinBtn.addEventListener('click', () => 
+        testCamera(checkinVideo, checkinPlaceholder, 'checkin')
+      );
+      startCheckinBtn.addEventListener('click', startCheckin);
+      stopCheckinBtn.addEventListener('click', stopCheckin);
+
+      // Check-out controls
+      testCheckoutBtn.addEventListener('click', () => 
+        testCamera(checkoutVideo, checkoutPlaceholder, 'checkout')
+      );
+      startCheckoutBtn.addEventListener('click', startCheckout);
+      stopCheckoutBtn.addEventListener('click', stopCheckout);
+
+      // Handle visibility change
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          if (checkinActive) checkinActive = false;
+          if (checkoutActive) checkoutActive = false;
+        } else {
+          if (startCheckinBtn.disabled && !checkinActive) {
+            checkinActive = true;
+            checkinDetectLoop();
+          }
+          if (startCheckoutBtn.disabled && !checkoutActive) {
+            checkoutActive = true;
+            checkoutDetectLoop();
+          }
+        }
+      });
+
+      // Cleanup on page unload
+      window.addEventListener('beforeunload', () => {
+        if (apiSyncInterval) clearInterval(apiSyncInterval);
+        if (checkinStream) checkinStream.getTracks().forEach(t => t.stop());
+        if (checkoutStream) checkoutStream.getTracks().forEach(t => t.stop());
+      });
+    }
+
+    // Start when page loads
+    window.addEventListener('load', init);
+  })();
+</script>
+</body>
+</html>
