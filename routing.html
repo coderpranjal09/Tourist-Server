@@ -34,14 +34,14 @@
 
         /* Modern Sidebar */
         #sidebar {
-            width: 400px;
-            background: rgba(255, 255, 255, 0.95);
+            width: 380px;
+            background: rgba(255, 255, 255, 0.98);
             backdrop-filter: blur(10px);
-            border-right: 1px solid rgba(255, 255, 255, 0.2);
+            border-right: 1px solid rgba(0, 0, 0, 0.1);
             display: flex;
             flex-direction: column;
             z-index: 10;
-            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
             transition: all 0.3s ease;
             position: relative;
         }
@@ -53,9 +53,9 @@
         #sidebar.minimized .sidebar-content,
         #sidebar.minimized .search-section,
         #sidebar.minimized .camera-data-section,
-        #sidebar.minimized .stats-summary,
         #sidebar.minimized #find-routes,
-        #sidebar.minimized #routes-container {
+        #sidebar.minimized #routes-container,
+        #sidebar.minimized .geofence-btn {
             display: none;
         }
 
@@ -328,7 +328,7 @@
             font-weight: 500;
         }
 
-        /* Camera Data Section */
+        /* Camera Data Section - Clean Version */
         .camera-data-section {
             background: white;
             border-radius: 16px;
@@ -343,6 +343,8 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e2e8f0;
         }
 
         .camera-header h3 {
@@ -376,36 +378,9 @@
             background: #fbb13c;
         }
 
-        .stats-summary {
-            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
-            border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 20px;
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            border: 1px solid #e2e8f0;
-        }
-
-        .summary-item {
-            text-align: center;
-        }
-
-        .summary-value {
-            font-size: 24px;
-            font-weight: 700;
-            color: #1e3c72;
-        }
-
-        .summary-label {
-            font-size: 11px;
-            color: #64748b;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
+        /* Camera List - Only Places */
         .camera-list {
-            max-height: 250px;
+            max-height: 300px;
             overflow-y: auto;
             padding-right: 5px;
         }
@@ -413,8 +388,8 @@
         .camera-card {
             background: #f8fafc;
             border-radius: 12px;
-            padding: 12px;
-            margin-bottom: 10px;
+            padding: 15px;
+            margin-bottom: 12px;
             border-left: 5px solid;
             cursor: pointer;
             transition: all 0.3s;
@@ -423,56 +398,68 @@
 
         .camera-card:hover {
             transform: translateX(5px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.1);
         }
 
         .camera-card.low { border-left-color: #10b981; }
         .camera-card.medium { border-left-color: #f9a61a; }
         .camera-card.high { border-left-color: #ef4444; }
 
-        .camera-header-row {
+        .place-header {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 8px;
+            align-items: center;
+            margin-bottom: 12px;
         }
 
         .place-name {
-            font-weight: 600;
+            font-weight: 700;
             color: #1e3c72;
-            font-size: 14px;
+            font-size: 16px;
         }
 
-        .place-location {
-            font-size: 11px;
-            color: #64748b;
-        }
-
-        .camera-stats {
-            display: flex;
-            gap: 15px;
-            margin: 10px 0;
-            flex-wrap: wrap;
-        }
-
-        .stat-badge {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 12px;
-            background: white;
+        .place-badge {
+            background: #e2e8f0;
             padding: 4px 10px;
             border-radius: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            font-size: 11px;
+            font-weight: 600;
+            color: #475569;
+        }
+
+        .crowd-numbers {
+            display: flex;
+            gap: 20px;
+            margin: 12px 0;
+        }
+
+        .number-item {
+            text-align: center;
+            flex: 1;
+        }
+
+        .number-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1e3c72;
+        }
+
+        .number-label {
+            font-size: 10px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .crowd-status {
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 11px;
+            padding: 8px 12px;
+            border-radius: 30px;
+            font-size: 12px;
             font-weight: 600;
             display: inline-flex;
             align-items: center;
-            gap: 5px;
+            gap: 8px;
+            margin-top: 8px;
         }
 
         .crowd-status.low {
@@ -493,8 +480,10 @@
         .update-time {
             font-size: 10px;
             color: #94a3b8;
-            margin-top: 5px;
+            margin-top: 8px;
             text-align: right;
+            border-top: 1px dashed #e2e8f0;
+            padding-top: 8px;
         }
 
         /* Geofence Button */
@@ -1005,6 +994,18 @@
             100% { filter: drop-shadow(0 0 10px #8b5cf6) drop-shadow(0 0 20px #8b5cf6); }
         }
 
+        /* Map Highlight Classes */
+        .map-highlight {
+            filter: brightness(1.1) contrast(1.1);
+            transition: all 0.3s;
+        }
+
+        .route-highlight {
+            stroke-width: 8 !important;
+            stroke: #1e3c72 !important;
+            filter: drop-shadow(0 0 10px rgba(30, 60, 114, 0.5));
+        }
+
         /* Responsive Design */
         @media (max-width: 768px) {
             #sidebar {
@@ -1025,16 +1026,6 @@
                 bottom: 20px;
                 right: 20px;
             }
-        }
-
-        /* Place Name Styling */
-        .place-badge {
-            display: inline-block;
-            padding: 2px 8px;
-            background: #e2e8f0;
-            border-radius: 12px;
-            font-size: 10px;
-            color: #475569;
         }
     </style>
 </head>
@@ -1099,32 +1090,16 @@
                     </div>
                 </div>
 
-                <!-- Camera Data Section -->
+                <!-- Camera Data Section - Only Places -->
                 <div class="camera-data-section">
                     <div class="camera-header">
-                        <h3><i class="fas fa-users"></i> लाइव भीड़ डेटा</h3>
+                        <h3><i class="fas fa-map-marker-alt"></i> लाइव स्थान</h3>
                         <button class="refresh-cameras" id="refreshCameras">
                             <i class="fas fa-sync-alt"></i>
                         </button>
                     </div>
 
-                    <!-- Stats Summary -->
-                    <div class="stats-summary">
-                        <div class="summary-item">
-                            <div class="summary-value" id="totalCameras">0</div>
-                            <div class="summary-label">स्थान</div>
-                        </div>
-                        <div class="summary-item">
-                            <div class="summary-value" id="totalPeople">0</div>
-                            <div class="summary-label">लाइव</div>
-                        </div>
-                        <div class="summary-item">
-                            <div class="summary-value" id="crowdedLocations">0</div>
-                            <div class="summary-label">भीड़भाड़</div>
-                        </div>
-                    </div>
-
-                    <!-- Camera List - Shows Place Names -->
+                    <!-- Camera List - Shows Only Places -->
                     <div id="cameraList" class="camera-list">
                         <div style="text-align:center; padding:20px; color:#64748b;">
                             <i class="fas fa-spinner fa-spin"></i> डेटा लोड हो रहा...
@@ -1221,7 +1196,7 @@
     <script>
         // Configuration
         const MAPBOX_TOKEN = 'pk.eyJ1IjoicHJhbmphbG1haXRoYW5pIiwiYSI6ImNtbXZvajcwajAxeGcyb3M0em85YWJlc2QifQ.WosjZQ6bGxv8_S8ue0sNeA';
-        const API_BASE_URL = 'http://localhost:5000/api/crowd';
+        const API_BASE_URL = 'https://tourist-server-foki.onrender.com/api/crowd';
 
         mapboxgl.accessToken = MAPBOX_TOKEN;
 
@@ -1281,7 +1256,9 @@
                 container: 'map', 
                 style: 'mapbox://styles/mapbox/streets-v12', 
                 center: [79.0882, 30.3165], 
-                zoom: 7.5 
+                zoom: 7.5,
+                pitch: 45,
+                bearing: 0
             });
             
             map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right');
@@ -1329,6 +1306,31 @@
                         'heatmap-opacity': 0.6
                     }
                 });
+
+                // Add route source for better highlighting
+                map.addSource('routes', {
+                    type: 'geojson',
+                    data: {
+                        type: 'FeatureCollection',
+                        features: []
+                    }
+                });
+
+                map.addLayer({
+                    id: 'routes-layer',
+                    type: 'line',
+                    source: 'routes',
+                    layout: {
+                        'line-join': 'round',
+                        'line-cap': 'round'
+                    },
+                    paint: {
+                        'line-color': ['get', 'color'],
+                        'line-width': ['get', 'width'],
+                        'line-opacity': 0.8,
+                        'line-blur': 1
+                    }
+                });
             });
         }
 
@@ -1344,7 +1346,6 @@
                     cameraData = data.data;
                     updateCameraList();
                     updateCameraMarkers();
-                    updateStatsSummary(data.summary);
                     updateHeatmap();
                     
                     // Update destination heat if destination exists
@@ -1370,16 +1371,8 @@
                 { cameraName: 'Badrinath Temple', location: 'Badrinath', liveCount: 156, totalCount: 850, remainingCount: 480, lastUpdated: new Date().toISOString() }
             ];
             
-            const summary = {
-                totalLive: cameraData.reduce((acc, cam) => acc + cam.liveCount, 0),
-                totalEntries: cameraData.reduce((acc, cam) => acc + cam.totalCount, 0),
-                totalRemaining: cameraData.reduce((acc, cam) => acc + cam.remainingCount, 0),
-                activeCameras: cameraData.length
-            };
-            
             updateCameraList();
             updateCameraMarkers();
-            updateStatsSummary(summary);
             updateHeatmap();
         }
 
@@ -1389,18 +1382,6 @@
                     <i class="fas fa-exclamation-circle"></i> ${message}
                 </div>
             `;
-        }
-
-        function updateStatsSummary(summary) {
-            if (summary) {
-                document.getElementById('totalCameras').innerText = summary.activeCameras || cameraData.length;
-                document.getElementById('totalPeople').innerText = summary.totalLive || cameraData.reduce((acc, cam) => acc + (cam.liveCount || 0), 0);
-                document.getElementById('crowdedLocations').innerText = cameraData.filter(cam => (cam.remainingCount || 0) >= 50).length;
-            } else {
-                document.getElementById('totalCameras').innerText = cameraData.length;
-                document.getElementById('totalPeople').innerText = cameraData.reduce((acc, cam) => acc + (cam.liveCount || 0), 0);
-                document.getElementById('crowdedLocations').innerText = cameraData.filter(cam => (cam.remainingCount || 0) >= 50).length;
-            }
         }
 
         function getCrowdStatus(remaining) {
@@ -1419,22 +1400,31 @@
 
             list.innerHTML = cameraData.map(cam => {
                 const crowd = getCrowdStatus(cam.remainingCount || 0);
-                // Extract place name from camera name (remove camera/gate/temple words)
-                let placeName = cam.cameraName.replace(/Camera|Gate|Entrance|Temple|Bridge|Gate|Main|Parking|Viewpoint/gi, '').trim();
+                // Extract place name from camera name
+                let placeName = cam.cameraName.replace(/Camera|Gate|Entrance|Temple|Bridge|Main|Parking|Viewpoint/gi, '').trim();
                 if (!placeName) placeName = cam.location || 'उत्तराखंड';
                 
                 const updateTime = cam.lastUpdated ? new Date(cam.lastUpdated).toLocaleTimeString('hi-IN', { hour: '2-digit', minute: '2-digit' }) : 'अज्ञात';
                 
                 return `
                     <div class="camera-card ${crowd.level}" onclick="flyToCamera('${cam.cameraName}')">
-                        <div class="camera-header-row">
-                            <span class="place-name"><i class="fas fa-map-marker-alt"></i> ${placeName}</span>
-                            <span class="place-location">${cam.location || 'उत्तराखंड'}</span>
+                        <div class="place-header">
+                            <span class="place-name"><i class="fas fa-map-marker-alt" style="color: ${crowd.color};"></i> ${placeName}</span>
+                            <span class="place-badge">${cam.location || 'उत्तराखंड'}</span>
                         </div>
-                        <div class="camera-stats">
-                            <span class="stat-badge"><i class="fas fa-user-plus"></i> नया: ${cam.liveCount || 0}</span>
-                            <span class="stat-badge"><i class="fas fa-users"></i> कुल: ${cam.totalCount || 0}</span>
-                            <span class="stat-badge"><i class="fas fa-user-check"></i> अंदर: ${cam.remainingCount || 0}</span>
+                        <div class="crowd-numbers">
+                            <div class="number-item">
+                                <div class="number-value" style="color: #3b82f6;">${cam.liveCount || 0}</div>
+                                <div class="number-label">नया</div>
+                            </div>
+                            <div class="number-item">
+                                <div class="number-value" style="color: #f59e0b;">${cam.totalCount || 0}</div>
+                                <div class="number-label">कुल</div>
+                            </div>
+                            <div class="number-item">
+                                <div class="number-value" style="color: #10b981;">${cam.remainingCount || 0}</div>
+                                <div class="number-label">अंदर</div>
+                            </div>
                         </div>
                         <div class="crowd-status ${crowd.level}">
                             <i class="fas ${crowd.level === 'high' ? 'fa-exclamation-triangle' : crowd.level === 'medium' ? 'fa-exclamation-circle' : 'fa-check-circle'}"></i>
@@ -1498,7 +1488,7 @@
                 el.innerText = cam.remainingCount || 0;
                 
                 // Extract place name
-                let placeName = cam.cameraName.replace(/Camera|Gate|Entrance|Temple|Bridge|Gate|Main|Parking|Viewpoint/gi, '').trim();
+                let placeName = cam.cameraName.replace(/Camera|Gate|Entrance|Temple|Bridge|Main|Parking|Viewpoint/gi, '').trim();
                 if (!placeName) placeName = cam.location || 'उत्तराखंड';
                 
                 const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
@@ -1597,7 +1587,7 @@
                     .addTo(map);
 
                 // Extract place name
-                let placeName = cam.cameraName.replace(/Camera|Gate|Entrance|Temple|Bridge|Gate|Main|Parking|Viewpoint/gi, '').trim();
+                let placeName = cam.cameraName.replace(/Camera|Gate|Entrance|Temple|Bridge|Main|Parking|Viewpoint/gi, '').trim();
                 if (!placeName) placeName = cam.location || 'उत्तराखंड';
 
                 const popup = new mapboxgl.Popup({ closeButton: false })
@@ -1762,7 +1752,7 @@
         function closeRoutes() {
             document.getElementById('routes-container').style.display = 'none';
             // Clear routes from map
-            if (map.getLayer('routes')) map.removeLayer('routes');
+            if (map.getLayer('routes-layer')) map.removeLayer('routes-layer');
             if (map.getSource('routes')) map.removeSource('routes');
             routes = [];
         }
@@ -2235,48 +2225,63 @@
             if (!routes.length) return;
             
             try {
-                if (map.getLayer('routes')) map.removeLayer('routes');
-                if (map.getSource('routes')) map.removeSource('routes');
-
+                // Update the routes source
                 const features = routes.map((r, i) => ({
                     type: 'Feature',
                     properties: {
                         color: i === selectedRouteIndex ? (isGeofenceActive ? '#8b5cf6' : '#1e3c72') : '#94a3b8',
-                        width: i === selectedRouteIndex ? 8 : 4,
-                        opacity: i === selectedRouteIndex ? 0.9 : 0.5
+                        width: i === selectedRouteIndex ? 8 : 4
                     },
                     geometry: r.geometry
                 }));
 
-                map.addSource('routes', {
-                    type: 'geojson',
-                    data: {
-                        type: 'FeatureCollection',
-                        features: features
-                    }
+                map.getSource('routes').setData({
+                    type: 'FeatureCollection',
+                    features: features
                 });
 
-                map.addLayer({
-                    id: 'routes',
-                    type: 'line',
-                    source: 'routes',
-                    layout: {
-                        'line-join': 'round',
-                        'line-cap': 'round'
-                    },
-                    paint: {
-                        'line-color': ['get', 'color'],
-                        'line-width': ['get', 'width'],
-                        'line-opacity': ['get', 'opacity']
-                    }
-                });
+                // Ensure layer exists
+                if (!map.getLayer('routes-layer')) {
+                    map.addLayer({
+                        id: 'routes-layer',
+                        type: 'line',
+                        source: 'routes',
+                        layout: {
+                            'line-join': 'round',
+                            'line-cap': 'round'
+                        },
+                        paint: {
+                            'line-color': ['get', 'color'],
+                            'line-width': ['get', 'width'],
+                            'line-opacity': 0.9,
+                            'line-blur': 1
+                        }
+                    });
+                }
 
                 // Add glow effect for protected route
                 if (isGeofenceActive && selectedRouteIndex === 0) {
-                    const routeElement = document.getElementById('routes');
-                    if (routeElement) {
-                        routeElement.classList.add('route-beam');
-                    }
+                    // Add a second layer for glow effect
+                    if (map.getLayer('route-glow')) map.removeLayer('route-glow');
+                    
+                    map.addLayer({
+                        id: 'route-glow',
+                        type: 'line',
+                        source: 'routes',
+                        layout: {
+                            'line-join': 'round',
+                            'line-cap': 'round'
+                        },
+                        paint: {
+                            'line-color': '#8b5cf6',
+                            'line-width': 12,
+                            'line-opacity': 0.3,
+                            'line-blur': 5
+                        },
+                        filter: ['==', ['get', 'color'], '#8b5cf6']
+                    });
+                } else {
+                    if (map.getLayer('route-glow')) map.removeLayer('route-glow');
                 }
             } catch (error) {
                 console.error('Error displaying routes on map:', error);
@@ -2293,7 +2298,12 @@
                         r.geometry.coordinates.forEach(c => bounds.extend(c));
                     }
                 });
-                map.fitBounds(bounds, { padding: 50, duration: 1000, essential: true });
+                map.fitBounds(bounds, { 
+                    padding: 50, 
+                    duration: 1000, 
+                    essential: true,
+                    maxZoom: 12
+                });
             } catch (error) {
                 console.error('Error fitting bounds:', error);
             }
