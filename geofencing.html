@@ -1,0 +1,2402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>उत्तराखंड स्मार्ट नेविगेशन · Uttarakhand Smart Navigation</title>
+    
+    <!-- Mapbox GL JS -->
+    <script src='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js'></script>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css' rel='stylesheet' />
+    
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            height: 100vh;
+            overflow: hidden;
+            background: #0f172a;
+        }
+        
+        #app {
+            display: flex;
+            height: 100vh;
+            position: relative;
+        }
+
+        /* Modern Sidebar */
+        #sidebar {
+            width: 380px;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        #sidebar.minimized {
+            width: 80px;
+        }
+
+        #sidebar.minimized .sidebar-content,
+        #sidebar.minimized .search-section,
+        #sidebar.minimized .camera-data-section,
+        #sidebar.minimized #find-routes,
+        #sidebar.minimized #routes-container,
+        #sidebar.minimized .geofence-btn {
+            display: none;
+        }
+
+        .sidebar-toggle {
+            position: absolute;
+            top: 20px;
+            right: -15px;
+            width: 30px;
+            height: 30px;
+            background: #1e3c72;
+            border: 2px solid white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            cursor: pointer;
+            z-index: 20;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+        }
+
+        .sidebar-toggle:hover {
+            transform: scale(1.1);
+            background: #2a5298;
+        }
+
+        #sidebar-header {
+            padding: 25px 20px;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            border-bottom: 4px solid #f9a61a;
+        }
+
+        #sidebar-header h2 {
+            font-size: 22px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+        }
+
+        #sidebar-header h2 i {
+            color: #f9a61a;
+        }
+
+        #sidebar-header .sub {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-top: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        #sidebar-content {
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 #f1f5f9;
+        }
+
+        #sidebar-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #sidebar-content::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        #sidebar-content::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        /* Live Tracking Status Bar */
+        .live-tracking-bar {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            color: white;
+            padding: 15px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .live-tracking-bar.active {
+            background: linear-gradient(135deg, #059669, #10b981);
+        }
+
+        .live-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .live-dot {
+            width: 12px;
+            height: 12px;
+            background: #10b981;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #10b981;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .live-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .live-speed {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .live-speed small {
+            font-size: 12px;
+            opacity: 0.8;
+            font-weight: normal;
+        }
+
+        .track-btn {
+            background: #f9a61a;
+            color: #1e3c72;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        .track-btn:hover {
+            transform: scale(1.05);
+            background: #fbb13c;
+            box-shadow: 0 4px 15px rgba(249, 166, 26, 0.4);
+        }
+
+        .track-btn.active {
+            background: #ef4444;
+            color: white;
+        }
+
+        /* Search Sections */
+        .search-section {
+            background: #f8fafc;
+            border-radius: 16px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .search-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1e3c72;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .search-label i {
+            color: #f9a61a;
+        }
+
+        .search-container {
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 14px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 14px;
+            transition: all 0.3s;
+            background: white;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #1e3c72;
+            box-shadow: 0 0 0 4px rgba(30, 60, 114, 0.1);
+        }
+
+        .current-location-btn {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #64748b;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+
+        .current-location-btn:hover {
+            color: #1e3c72;
+            background: #f1f5f9;
+        }
+
+        .suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            margin-top: 5px;
+            max-height: 250px;
+            overflow-y: auto;
+            display: none;
+            z-index: 1000;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .suggestion-item {
+            padding: 12px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #f1f5f9;
+            transition: background 0.2s;
+        }
+
+        .suggestion-item:hover {
+            background: #f8fafc;
+        }
+
+        .suggestion-name {
+            font-weight: 600;
+            color: #1e3c72;
+        }
+
+        .suggestion-address {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 3px;
+        }
+
+        .selected-place {
+            margin-top: 10px;
+            padding: 12px;
+            background: #e8f4fd;
+            border-radius: 10px;
+            font-size: 13px;
+            color: #1e3c72;
+            display: none;
+            align-items: center;
+            gap: 8px;
+            border-left: 4px solid #f9a61a;
+            font-weight: 500;
+        }
+
+        /* Camera Data Section - Clean Version */
+        .camera-data-section {
+            background: white;
+            border-radius: 16px;
+            padding: 15px;
+            margin: 20px 0;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .camera-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .camera-header h3 {
+            color: #1e3c72;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .camera-header h3 i {
+            color: #f9a61a;
+        }
+
+        .refresh-cameras {
+            background: #f9a61a;
+            color: #1e3c72;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .refresh-cameras:hover {
+            transform: rotate(180deg);
+            background: #fbb13c;
+        }
+
+        /* Camera List - Only Places */
+        .camera-list {
+            max-height: 300px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .camera-card {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 12px;
+            border-left: 5px solid;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid #e2e8f0;
+        }
+
+        .camera-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+        }
+
+        .camera-card.low { border-left-color: #10b981; }
+        .camera-card.medium { border-left-color: #f9a61a; }
+        .camera-card.high { border-left-color: #ef4444; }
+
+        .place-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .place-name {
+            font-weight: 700;
+            color: #1e3c72;
+            font-size: 16px;
+        }
+
+        .place-badge {
+            background: #e2e8f0;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #475569;
+        }
+
+        .crowd-numbers {
+            display: flex;
+            gap: 20px;
+            margin: 12px 0;
+        }
+
+        .number-item {
+            text-align: center;
+            flex: 1;
+        }
+
+        .number-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1e3c72;
+        }
+
+        .number-label {
+            font-size: 10px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .crowd-status {
+            padding: 8px 12px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .crowd-status.low {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .crowd-status.medium {
+            background: #fed7aa;
+            color: #92400e;
+        }
+
+        .crowd-status.high {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .update-time {
+            font-size: 10px;
+            color: #94a3b8;
+            margin-top: 8px;
+            text-align: right;
+            border-top: 1px dashed #e2e8f0;
+            padding-top: 8px;
+        }
+
+        /* Geofence Button */
+        .geofence-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #475569, #334155);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 15px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .geofence-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+
+        .geofence-btn.active {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        }
+
+        .geofence-btn.protected {
+            background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+            box-shadow: 0 0 20px #8b5cf6;
+            animation: glow 2s infinite;
+        }
+
+        @keyframes glow {
+            0% { box-shadow: 0 0 20px #8b5cf6; }
+            50% { box-shadow: 0 0 40px #8b5cf6; }
+            100% { box-shadow: 0 0 20px #8b5cf6; }
+        }
+
+        /* Find Routes Button */
+        #find-routes {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 20px 0;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        #find-routes:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(30, 60, 114, 0.4);
+        }
+
+        #find-routes:disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        /* Routes Container */
+        #routes-container {
+            display: none;
+            margin-top: 20px;
+            border-top: 2px solid #e2e8f0;
+            padding-top: 20px;
+        }
+
+        .routes-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .routes-header h3 {
+            color: #1e3c72;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .close-routes {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            font-size: 20px;
+            padding: 5px;
+            transition: all 0.3s;
+        }
+
+        .close-routes:hover {
+            color: #ef4444;
+            transform: scale(1.1);
+        }
+
+        .route-card {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 15px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .route-card:hover {
+            border-color: #1e3c72;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+
+        .route-card.selected {
+            border-color: #1e3c72;
+            background: #f0f9ff;
+        }
+
+        .route-card.protected {
+            border-color: #8b5cf6;
+            background: #f5f3ff;
+        }
+
+        .protected-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #8b5cf6;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 30px;
+            font-size: 11px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .route-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .route-name {
+            font-weight: 700;
+            color: #1e3c72;
+        }
+
+        .route-distance {
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .route-time {
+            font-size: 14px;
+            color: #1e3c72;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .route-crowd-indicator {
+            padding: 8px 12px;
+            border-radius: 30px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+
+        /* Map */
+        #map {
+            flex: 1;
+            height: 100vh;
+        }
+
+        /* Map Controls */
+        .map-controls {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            z-index: 5;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .map-control-btn {
+            width: 50px;
+            height: 50px;
+            background: white;
+            border: none;
+            border-radius: 50%;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: #1e3c72;
+            transition: all 0.3s;
+            border: 2px solid rgba(255,255,255,0.5);
+        }
+
+        .map-control-btn:hover {
+            background: #1e3c72;
+            color: white;
+            transform: scale(1.1);
+        }
+
+        /* Navigation Panel */
+        #navigation-panel {
+            position: absolute;
+            bottom: 30px;
+            left: 430px;
+            right: 100px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            z-index: 20;
+            display: none;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            background: rgba(255,255,255,0.95);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        #navigation-panel.active {
+            display: block;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .nav-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .nav-header h3 {
+            color: #1e3c72;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .close-nav {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            font-size: 20px;
+            transition: all 0.3s;
+        }
+
+        .close-nav:hover {
+            color: #ef4444;
+        }
+
+        .nav-info {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            border: 1px solid #e2e8f0;
+        }
+
+        .nav-stat {
+            text-align: center;
+        }
+
+        .nav-stat .label {
+            font-size: 11px;
+            color: #64748b;
+            text-transform: uppercase;
+        }
+
+        .nav-stat .value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1e3c72;
+        }
+
+        .nav-stat .unit {
+            font-size: 11px;
+            color: #94a3b8;
+        }
+
+        .instruction-list {
+            max-height: 150px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .instruction-item {
+            padding: 10px;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .instruction-icon {
+            width: 32px;
+            height: 32px;
+            background: #f1f5f9;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #1e3c72;
+        }
+
+        .instruction-text {
+            font-size: 13px;
+            color: #334155;
+            flex: 1;
+        }
+
+        .instruction-distance {
+            font-size: 11px;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        /* Heat Circle for Destinations */
+        .heat-circle {
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            border: 3px solid white;
+            box-shadow: 0 0 30px currentColor;
+            animation: heatPulse 2s infinite;
+            pointer-events: auto;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .heat-circle:hover {
+            transform: scale(1.2);
+            z-index: 100;
+        }
+
+        @keyframes heatPulse {
+            0% { transform: scale(1); opacity: 0.9; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.9; }
+        }
+
+        /* Geofence Alert */
+        #geofence-alert {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            color: white;
+            padding: 30px 40px;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(139, 92, 246, 0.6);
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            gap: 20px;
+            border: 3px solid white;
+            animation: alertPop 0.5s;
+        }
+
+        @keyframes alertPop {
+            0% { transform: translate(-50%, -50%) scale(0); }
+            80% { transform: translate(-50%, -50%) scale(1.1); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+
+        .alert-content h3 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .alert-content p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .alert-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 4px;
+            background: rgba(255,255,255,0.5);
+            animation: progress 5s linear;
+        }
+
+        @keyframes progress {
+            0% { width: 100%; }
+            100% { width: 0%; }
+        }
+
+        /* Loading Overlay */
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .spinner-large {
+            width: 60px;
+            height: 60px;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-top: 5px solid #f9a61a;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* User Marker */
+        .user-marker {
+            width: 20px;
+            height: 20px;
+            background: #3b82f6;
+            border: 3px solid white;
+            border-radius: 50%;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3);
+            animation: userPulse 2s infinite;
+            position: relative;
+        }
+
+        @keyframes userPulse {
+            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(59, 130, 246, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+        }
+
+        .user-direction {
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-bottom: 16px solid #3b82f6;
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+        }
+
+        /* Route Beam Effect */
+        .route-beam {
+            filter: drop-shadow(0 0 10px #8b5cf6) drop-shadow(0 0 20px #8b5cf6);
+            animation: beamPulse 2s infinite;
+        }
+
+        @keyframes beamPulse {
+            0% { filter: drop-shadow(0 0 10px #8b5cf6) drop-shadow(0 0 20px #8b5cf6); }
+            50% { filter: drop-shadow(0 0 20px #8b5cf6) drop-shadow(0 0 40px #8b5cf6); }
+            100% { filter: drop-shadow(0 0 10px #8b5cf6) drop-shadow(0 0 20px #8b5cf6); }
+        }
+
+        /* Map Highlight Classes */
+        .map-highlight {
+            filter: brightness(1.1) contrast(1.1);
+            transition: all 0.3s;
+        }
+
+        .route-highlight {
+            stroke-width: 8 !important;
+            stroke: #1e3c72 !important;
+            filter: drop-shadow(0 0 10px rgba(30, 60, 114, 0.5));
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            #sidebar {
+                position: absolute;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                z-index: 100;
+            }
+
+            #navigation-panel {
+                left: 20px;
+                right: 20px;
+                bottom: 20px;
+            }
+
+            .map-controls {
+                bottom: 20px;
+                right: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Sidebar -->
+        <div id="sidebar">
+            <div class="sidebar-toggle" id="sidebarToggle">
+                <i class="fas fa-chevron-left"></i>
+            </div>
+            
+            <div id="sidebar-header">
+                <h2><i class="fas fa-mountain"></i> उत्तराखंड स्मार्ट</h2>
+                <div class="sub">Advanced Navigation with Purple Geofence</div>
+            </div>
+            
+            <div id="sidebar-content">
+                <!-- Live Tracking Status -->
+                <div class="live-tracking-bar" id="liveTrackingBar">
+                    <div class="live-status">
+                        <span class="live-dot"></span>
+                        <div class="live-info">
+                            <span id="trackingStatus">ट्रैकिंग बंद</span>
+                            <span class="live-speed" id="liveSpeed">0 <small>km/h</small></span>
+                        </div>
+                    </div>
+                    <button class="track-btn" id="toggleTracking">
+                        <i class="fas fa-play"></i> शुरू करें
+                    </button>
+                </div>
+
+                <!-- Origin Search -->
+                <div class="search-section">
+                    <div class="search-label">
+                        <i class="fas fa-circle" style="color: #10b981;"></i> प्रारंभ बिंदु
+                    </div>
+                    <div class="search-container">
+                        <input type="text" id="origin-search" class="search-input" placeholder="शुरुआती स्थान खोजें...">
+                        <button class="current-location-btn" id="useCurrentLocation" title="मेरी लोकेशन का उपयोग करें">
+                            <i class="fas fa-location-arrow"></i>
+                        </button>
+                        <div id="origin-suggestions" class="suggestions"></div>
+                    </div>
+                    <div id="origin-selected" class="selected-place">
+                        <i class="fas fa-check-circle" style="color:#10b981;"></i>
+                        <span id="origin-name"></span>
+                    </div>
+                </div>
+
+                <!-- Destination Search -->
+                <div class="search-section">
+                    <div class="search-label">
+                        <i class="fas fa-flag-checkered" style="color: #ef4444;"></i> गंतव्य स्थान
+                    </div>
+                    <div class="search-container">
+                        <input type="text" id="destination-search" class="search-input" placeholder="गंतव्य स्थान खोजें...">
+                        <div id="destination-suggestions" class="suggestions"></div>
+                    </div>
+                    <div id="destination-selected" class="selected-place">
+                        <i class="fas fa-check-circle" style="color:#10b981;"></i>
+                        <span id="destination-name"></span>
+                    </div>
+                </div>
+
+                <!-- Camera Data Section - Only Places -->
+                <div class="camera-data-section">
+                    <div class="camera-header">
+                        <h3><i class="fas fa-map-marker-alt"></i> लाइव स्थान</h3>
+                        <button class="refresh-cameras" id="refreshCameras">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+
+                    <!-- Camera List - Shows Only Places -->
+                    <div id="cameraList" class="camera-list">
+                        <div style="text-align:center; padding:20px; color:#64748b;">
+                            <i class="fas fa-spinner fa-spin"></i> डेटा लोड हो रहा...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Geofence Protection Button -->
+                <button id="geofenceBtn" class="geofence-btn">
+                    <i class="fas fa-shield-alt"></i>
+                    जियोफेंस सुरक्षा सक्रिय करें
+                </button>
+
+                <!-- Find Routes Button -->
+                <button id="find-routes" disabled>
+                    <i class="fas fa-route"></i>
+                    रास्ते खोजें
+                </button>
+
+                <!-- Routes Container -->
+                <div id="routes-container">
+                    <div class="routes-header">
+                        <h3><i class="fas fa-map-signs"></i> उपलब्ध रास्ते</h3>
+                        <button class="close-routes" id="closeRoutes">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div id="routes-list"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Map Container -->
+        <div id="map"></div>
+
+        <!-- Map Controls -->
+        <div class="map-controls">
+            <button class="map-control-btn" id="zoomIn">
+                <i class="fas fa-plus"></i>
+            </button>
+            <button class="map-control-btn" id="zoomOut">
+                <i class="fas fa-minus"></i>
+            </button>
+            <button class="map-control-btn" id="centerMap">
+                <i class="fas fa-location-arrow"></i>
+            </button>
+        </div>
+
+        <!-- Navigation Panel -->
+        <div id="navigation-panel">
+            <div class="nav-header">
+                <h3><i class="fas fa-navigation"></i> लाइव नेविगेशन</h3>
+                <button class="close-nav" id="closeNav">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="nav-info">
+                <div class="nav-stat">
+                    <div class="label">आगमन</div>
+                    <div class="value" id="navEta">--:--</div>
+                </div>
+                <div class="nav-stat">
+                    <div class="label">दूरी</div>
+                    <div class="value" id="navDistance">0</div>
+                    <span class="unit">km</span>
+                </div>
+                <div class="nav-stat">
+                    <div class="label">समय</div>
+                    <div class="value" id="navTime">0</div>
+                    <span class="unit">min</span>
+                </div>
+            </div>
+            <div class="instruction-list" id="instructionList">
+                <!-- Instructions will be added here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Geofence Alert - Purple Theme -->
+    <div id="geofence-alert">
+        <i class="fas fa-shield-alt" style="font-size: 48px;"></i>
+        <div class="alert-content">
+            <h3>⚠️ जियोफेंस अलर्ट</h3>
+            <p id="alertMessage">आप सुरक्षित मार्ग से बाहर जा रहे हैं!</p>
+        </div>
+        <div class="alert-progress"></div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay">
+        <div class="spinner-large"></div>
+    </div>
+
+    <script>
+        // Configuration
+        const MAPBOX_TOKEN = 'pk.eyJ1IjoicHJhbmphbG1haXRoYW5pIiwiYSI6ImNtbXZvajcwajAxeGcyb3M0em85YWJlc2QifQ.WosjZQ6bGxv8_S8ue0sNeA';
+        const API_BASE_URL = 'https://tourist-server-foki.onrender.com/api/crowd';
+
+        mapboxgl.accessToken = MAPBOX_TOKEN;
+
+        // Global Variables
+        let map;
+        let origin = null;
+        let destination = null;
+        let routes = [];
+        let selectedRouteIndex = 0;
+        let markers = [];
+        let cameraMarkers = [];
+        let cameraData = [];
+        let destinationHeatMarkers = [];
+        let userMarker = null;
+        let watchId = null;
+        let isTracking = false;
+        let isGeofenceActive = false;
+        let geofenceLayer = null;
+        let currentRoute = null;
+        let refreshInterval;
+        let lastKnownPosition = null;
+        let currentSpeed = 0;
+        let navigationActive = false;
+        let sidebarMinimized = false;
+
+        // Known Uttarakhand locations for camera mapping
+        const locationCoords = {
+            'chopta': [79.3165, 30.4865],
+            'tunganath': [79.3265, 30.4965],
+            'kedarnath': [79.0669, 30.7346],
+            'badrinath': [79.4937, 30.7433],
+            'gangotri': [78.9397, 30.9944],
+            'yamunotri': [78.4636, 31.0167],
+            'haridwar': [78.1633, 29.9457],
+            'rishikesh': [78.2673, 30.0869],
+            'auli': [79.6189, 30.5331],
+            'nainital': [79.4472, 29.3919],
+            'mussoorie': [78.0707, 30.4598],
+            'jim corbett': [78.7758, 29.5300]
+        };
+
+        // Initialize Map
+        window.onload = function() {
+            initMap();
+            setupEventListeners();
+            loadCameraData();
+            refreshInterval = setInterval(loadCameraData, 10000); // Update every 10 seconds
+        };
+
+        window.addEventListener('beforeunload', () => {
+            clearInterval(refreshInterval);
+            if (watchId) navigator.geolocation.clearWatch(watchId);
+        });
+
+        function initMap() {
+            map = new mapboxgl.Map({ 
+                container: 'map', 
+                style: 'mapbox://styles/mapbox/streets-v12', 
+                center: [79.0882, 30.3165], 
+                zoom: 7.5,
+                pitch: 45,
+                bearing: 0
+            });
+            
+            map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right');
+            
+            map.on('load', function() {
+                console.log('Map loaded successfully');
+                
+                // Add heatmap source for crowd visualization
+                map.addSource('crowd-heat', {
+                    type: 'geojson',
+                    data: {
+                        type: 'FeatureCollection',
+                        features: []
+                    }
+                });
+
+                map.addLayer({
+                    id: 'crowd-heat-layer',
+                    type: 'heatmap',
+                    source: 'crowd-heat',
+                    maxzoom: 15,
+                    paint: {
+                        'heatmap-weight': [
+                            'interpolate',
+                            ['linear'],
+                            ['get', 'count'],
+                            0, 0,
+                            50, 0.3,
+                            100, 0.6,
+                            200, 1
+                        ],
+                        'heatmap-intensity': 0.8,
+                        'heatmap-color': [
+                            'interpolate',
+                            ['linear'],
+                            ['heatmap-density'],
+                            0, 'rgba(16, 185, 129, 0)',
+                            0.2, 'rgba(16, 185, 129, 0.6)',
+                            0.4, 'rgba(249, 166, 26, 0.6)',
+                            0.6, 'rgba(249, 166, 26, 0.8)',
+                            0.8, 'rgba(239, 68, 68, 0.8)',
+                            1, 'rgba(239, 68, 68, 1)'
+                        ],
+                        'heatmap-radius': 25,
+                        'heatmap-opacity': 0.6
+                    }
+                });
+
+                // Add route source for better highlighting
+                map.addSource('routes', {
+                    type: 'geojson',
+                    data: {
+                        type: 'FeatureCollection',
+                        features: []
+                    }
+                });
+
+                map.addLayer({
+                    id: 'routes-layer',
+                    type: 'line',
+                    source: 'routes',
+                    layout: {
+                        'line-join': 'round',
+                        'line-cap': 'round'
+                    },
+                    paint: {
+                        'line-color': ['get', 'color'],
+                        'line-width': ['get', 'width'],
+                        'line-opacity': 0.8,
+                        'line-blur': 1
+                    }
+                });
+            });
+        }
+
+        // Load Camera Data from API
+        async function loadCameraData() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/all-stats`);
+                if (!response.ok) throw new Error('API response not OK');
+                
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    cameraData = data.data;
+                    updateCameraList();
+                    updateCameraMarkers();
+                    updateHeatmap();
+                    
+                    // Update destination heat if destination exists
+                    if (destination) {
+                        showDestinationHeatByKeyword(destination.name);
+                    }
+                } else {
+                    showError('Invalid API response format');
+                }
+            } catch (error) {
+                console.error('API Error:', error);
+                // Use mock data for demonstration
+                useMockData();
+            }
+        }
+
+        function useMockData() {
+            cameraData = [
+                { cameraName: 'Chopta Gate Entrance', location: 'Chopta Main Gate', liveCount: 1, totalCount: 71, remainingCount: 71, lastUpdated: new Date().toISOString() },
+                { cameraName: 'Rishikesh Bridge', location: 'Rishikesh', liveCount: 245, totalCount: 1200, remainingCount: 890, lastUpdated: new Date().toISOString() },
+                { cameraName: 'Haridwar Gate', location: 'Haridwar', liveCount: 412, totalCount: 3000, remainingCount: 1700, lastUpdated: new Date().toISOString() },
+                { cameraName: 'Kedarnath Ji', location: 'Kedarnath', liveCount: 78, totalCount: 620, remainingCount: 320, lastUpdated: new Date().toISOString() },
+                { cameraName: 'Badrinath Temple', location: 'Badrinath', liveCount: 156, totalCount: 850, remainingCount: 480, lastUpdated: new Date().toISOString() }
+            ];
+            
+            updateCameraList();
+            updateCameraMarkers();
+            updateHeatmap();
+        }
+
+        function showError(message) {
+            document.getElementById('cameraList').innerHTML = `
+                <div style="text-align:center;padding:20px;color:#ef4444;">
+                    <i class="fas fa-exclamation-circle"></i> ${message}
+                </div>
+            `;
+        }
+
+        function getCrowdStatus(remaining) {
+            if (remaining >= 100) return { level: 'high', label: 'अत्यधिक भीड़', color: '#ef4444' };
+            if (remaining >= 50) return { level: 'medium', label: 'भीड़', color: '#f9a61a' };
+            return { level: 'low', label: 'सामान्य', color: '#10b981' };
+        }
+
+        function updateCameraList() {
+            const list = document.getElementById('cameraList');
+            
+            if (!cameraData || cameraData.length === 0) {
+                list.innerHTML = '<div style="text-align:center;padding:20px;color:#666;">कोई डेटा नहीं</div>';
+                return;
+            }
+
+            list.innerHTML = cameraData.map(cam => {
+                const crowd = getCrowdStatus(cam.remainingCount || 0);
+                // Extract place name from camera name
+                let placeName = cam.cameraName.replace(/Camera|Gate|Entrance|Temple|Bridge|Main|Parking|Viewpoint/gi, '').trim();
+                if (!placeName) placeName = cam.location || 'उत्तराखंड';
+                
+                const updateTime = cam.lastUpdated ? new Date(cam.lastUpdated).toLocaleTimeString('hi-IN', { hour: '2-digit', minute: '2-digit' }) : 'अज्ञात';
+                
+                return `
+                    <div class="camera-card ${crowd.level}" onclick="flyToCamera('${cam.cameraName}')">
+                        <div class="place-header">
+                            <span class="place-name"><i class="fas fa-map-marker-alt" style="color: ${crowd.color};"></i> ${placeName}</span>
+                            <span class="place-badge">${cam.location || 'उत्तराखंड'}</span>
+                        </div>
+                        <div class="crowd-numbers">
+                            <div class="number-item">
+                                <div class="number-value" style="color: #3b82f6;">${cam.liveCount || 0}</div>
+                                <div class="number-label">नया</div>
+                            </div>
+                            <div class="number-item">
+                                <div class="number-value" style="color: #f59e0b;">${cam.totalCount || 0}</div>
+                                <div class="number-label">कुल</div>
+                            </div>
+                            <div class="number-item">
+                                <div class="number-value" style="color: #10b981;">${cam.remainingCount || 0}</div>
+                                <div class="number-label">अंदर</div>
+                            </div>
+                        </div>
+                        <div class="crowd-status ${crowd.level}">
+                            <i class="fas ${crowd.level === 'high' ? 'fa-exclamation-triangle' : crowd.level === 'medium' ? 'fa-exclamation-circle' : 'fa-check-circle'}"></i>
+                            ${crowd.label}
+                        </div>
+                        <div class="update-time">
+                            <i class="far fa-clock"></i> अपडेट: ${updateTime}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        window.flyToCamera = function(cameraName) {
+            const cam = cameraData.find(c => c.cameraName === cameraName);
+            if (cam) {
+                const coords = getCameraCoordinates(cam);
+                if (coords) {
+                    map.flyTo({ center: coords, zoom: 14, essential: true });
+                }
+            }
+        };
+
+        function getCameraCoordinates(cam) {
+            const name = (cam.cameraName + ' ' + (cam.location || '')).toLowerCase();
+            
+            for (let [key, coords] of Object.entries(locationCoords)) {
+                if (name.includes(key)) {
+                    return coords;
+                }
+            }
+            
+            // Return Dehradun if not found
+            return [78.0322, 30.3165];
+        }
+
+        function updateCameraMarkers() {
+            cameraMarkers.forEach(m => m.remove());
+            cameraMarkers = [];
+
+            cameraData.forEach(cam => {
+                const coords = getCameraCoordinates(cam);
+                if (!coords) return;
+
+                const crowd = getCrowdStatus(cam.remainingCount || 0);
+                
+                const el = document.createElement('div');
+                el.style.backgroundColor = crowd.color;
+                el.style.width = '35px';
+                el.style.height = '35px';
+                el.style.borderRadius = '50%';
+                el.style.display = 'flex';
+                el.style.alignItems = 'center';
+                el.style.justifyContent = 'center';
+                el.style.color = 'white';
+                el.style.cursor = 'pointer';
+                el.style.boxShadow = `0 0 20px ${crowd.color}`;
+                el.style.border = '3px solid white';
+                el.style.fontWeight = 'bold';
+                el.style.fontSize = '14px';
+                el.innerText = cam.remainingCount || 0;
+                
+                // Extract place name
+                let placeName = cam.cameraName.replace(/Camera|Gate|Entrance|Temple|Bridge|Main|Parking|Viewpoint/gi, '').trim();
+                if (!placeName) placeName = cam.location || 'उत्तराखंड';
+                
+                const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
+                    <div style="padding: 10px; min-width: 200px;">
+                        <h4 style="margin: 0 0 8px 0; color: #1e3c72;">${placeName}</h4>
+                        <p style="margin: 5px 0;"><i class="fas fa-map-pin"></i> ${cam.location || 'उत्तराखंड'}</p>
+                        <div style="display: flex; justify-content: space-between; margin: 10px 0;">
+                            <div><span style="color: #1e3c72; font-weight: 600;">${cam.liveCount || 0}</span><br>नया</div>
+                            <div><span style="color: #f9a61a; font-weight: 600;">${cam.totalCount || 0}</span><br>कुल</div>
+                            <div><span style="color: #10b981; font-weight: 600;">${cam.remainingCount || 0}</span><br>अंदर</div>
+                        </div>
+                        <div style="background: ${crowd.color}; color: white; padding: 5px; border-radius: 5px; text-align: center;">
+                            ${crowd.label}
+                        </div>
+                    </div>
+                `);
+
+                const marker = new mapboxgl.Marker(el)
+                    .setLngLat(coords)
+                    .setPopup(popup)
+                    .addTo(map);
+
+                cameraMarkers.push(marker);
+            });
+        }
+
+        function updateHeatmap() {
+            if (!map.getSource('crowd-heat')) return;
+
+            const features = cameraData.map(cam => {
+                const coords = getCameraCoordinates(cam);
+                if (!coords) return null;
+                
+                return {
+                    type: 'Feature',
+                    geometry: {
+                        type: 'Point',
+                        coordinates: coords
+                    },
+                    properties: {
+                        count: cam.remainingCount || 0,
+                        name: cam.cameraName
+                    }
+                };
+            }).filter(f => f !== null);
+
+            map.getSource('crowd-heat').setData({
+                type: 'FeatureCollection',
+                features: features
+            });
+        }
+
+        // Show destination heat circle based on keyword match
+        function showDestinationHeatByKeyword(destName) {
+            // Clear previous destination heat markers
+            destinationHeatMarkers.forEach(m => m.remove());
+            destinationHeatMarkers = [];
+
+            const lowerDest = destName.toLowerCase();
+            
+            // Find matching cameras
+            const matchedCameras = cameraData.filter(cam => {
+                const camName = (cam.cameraName || '').toLowerCase();
+                const camLoc = (cam.location || '').toLowerCase();
+                
+                return camName.includes(lowerDest) || 
+                       camLoc.includes(lowerDest) ||
+                       Object.keys(locationCoords).some(key => 
+                           lowerDest.includes(key) && (camName.includes(key) || camLoc.includes(key))
+                       );
+            });
+
+            // Show heat circles for matched cameras
+            matchedCameras.forEach(cam => {
+                const coords = getCameraCoordinates(cam);
+                if (!coords || !destination) return;
+
+                const remaining = cam.remainingCount || 0;
+                const crowd = getCrowdStatus(remaining);
+                
+                const heatEl = document.createElement('div');
+                heatEl.className = 'heat-circle';
+                
+                let size = 40 + remaining * 0.3;
+                size = Math.min(size, 120);
+                
+                heatEl.style.width = size + 'px';
+                heatEl.style.height = size + 'px';
+                heatEl.style.background = `radial-gradient(circle, ${crowd.color}80, ${crowd.color}40)`;
+                heatEl.style.border = `3px solid ${crowd.color}`;
+                heatEl.style.boxShadow = `0 0 30px ${crowd.color}`;
+                heatEl.innerText = remaining;
+
+                const marker = new mapboxgl.Marker({ element: heatEl, anchor: 'center' })
+                    .setLngLat(coords)
+                    .addTo(map);
+
+                // Extract place name
+                let placeName = cam.cameraName.replace(/Camera|Gate|Entrance|Temple|Bridge|Main|Parking|Viewpoint/gi, '').trim();
+                if (!placeName) placeName = cam.location || 'उत्तराखंड';
+
+                const popup = new mapboxgl.Popup({ closeButton: false })
+                    .setLngLat(coords)
+                    .setHTML(`
+                        <div style="padding: 5px;">
+                            <strong>${placeName}</strong><br>
+                            <span style="color: ${crowd.color};">● ${crowd.label}</span><br>
+                            <small>अंदर: ${remaining} लोग</small>
+                        </div>
+                    `);
+
+                marker.setPopup(popup);
+                destinationHeatMarkers.push(marker);
+            });
+        }
+
+        // Setup Event Listeners
+        function setupEventListeners() {
+            // Search inputs
+            document.getElementById('origin-search').addEventListener('input', debounce(e => searchPlaces(e.target.value, 'origin'), 500));
+            document.getElementById('destination-search').addEventListener('input', debounce(e => searchPlaces(e.target.value, 'destination'), 500));
+            
+            // Buttons
+            document.getElementById('useCurrentLocation').addEventListener('click', useCurrentLocation);
+            document.getElementById('find-routes').addEventListener('click', findRoutes);
+            document.getElementById('refreshCameras').addEventListener('click', loadCameraData);
+            document.getElementById('closeRoutes').addEventListener('click', closeRoutes);
+            document.getElementById('geofenceBtn').addEventListener('click', toggleGeofence);
+            document.getElementById('toggleTracking').addEventListener('click', toggleTracking);
+            document.getElementById('closeNav').addEventListener('click', closeNavigation);
+            document.getElementById('sidebarToggle').addEventListener('click', toggleSidebar);
+            
+            // Map controls
+            document.getElementById('zoomIn').addEventListener('click', () => map.zoomTo(map.getZoom() + 1));
+            document.getElementById('zoomOut').addEventListener('click', () => map.zoomTo(map.getZoom() - 1));
+            document.getElementById('centerMap').addEventListener('click', centerOnUser);
+
+            // Focus events to clear selections
+            document.getElementById('origin-search').addEventListener('focus', () => {
+                if (origin) {
+                    origin = null;
+                    document.getElementById('origin-selected').style.display = 'none';
+                    document.getElementById('origin-search').value = '';
+                    clearMarkers();
+                    updateFindRoutes();
+                }
+            });
+
+            document.getElementById('destination-search').addEventListener('focus', () => {
+                if (destination) {
+                    destination = null;
+                    document.getElementById('destination-selected').style.display = 'none';
+                    document.getElementById('destination-search').value = '';
+                    clearMarkers();
+                    updateFindRoutes();
+                    destinationHeatMarkers.forEach(m => m.remove());
+                    destinationHeatMarkers = [];
+                }
+            });
+
+            // Close suggestions on outside click
+            document.addEventListener('click', e => {
+                if (!e.target.closest('#origin-search') && !e.target.closest('#origin-suggestions') && !e.target.closest('#useCurrentLocation')) {
+                    document.getElementById('origin-suggestions').style.display = 'none';
+                }
+                if (!e.target.closest('#destination-search') && !e.target.closest('#destination-suggestions')) {
+                    document.getElementById('destination-suggestions').style.display = 'none';
+                }
+            });
+        }
+
+        function debounce(fn, delay) {
+            let timer;
+            return function(...args) {
+                clearTimeout(timer);
+                timer = setTimeout(() => fn(...args), delay);
+            };
+        }
+
+        // Search Places using Mapbox API
+        async function searchPlaces(query, type) {
+            if (query.length < 3) return;
+            
+            try {
+                const response = await fetch(
+                    `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?` +
+                    `access_token=${MAPBOX_TOKEN}&autocomplete=true&limit=5&country=IN&proximity=78.0322,30.3165`
+                );
+                
+                const data = await response.json();
+                if (data.features) showSuggestions(data.features, type);
+            } catch (error) {
+                console.error('Search error:', error);
+            }
+        }
+
+        function showSuggestions(places, type) {
+            const div = document.getElementById(`${type}-suggestions`);
+            div.innerHTML = '';
+            
+            places.forEach(place => {
+                const item = document.createElement('div');
+                item.className = 'suggestion-item';
+                item.innerHTML = `
+                    <div class="suggestion-name">${place.text}</div>
+                    <div class="suggestion-address">${place.place_name}</div>
+                `;
+                item.onclick = () => selectPlace(place, type);
+                div.appendChild(item);
+            });
+            
+            div.style.display = 'block';
+        }
+
+        function selectPlace(place, type) {
+            const placeData = {
+                name: place.place_name,
+                text: place.text,
+                coordinates: place.center
+            };
+
+            if (type === 'origin') {
+                origin = placeData;
+                document.getElementById('origin-search').value = place.place_name;
+                document.getElementById('origin-name').innerText = place.place_name;
+                document.getElementById('origin-selected').style.display = 'flex';
+                addMarker(place.center, 'origin');
+            } else {
+                destination = placeData;
+                document.getElementById('destination-search').value = place.place_name;
+                document.getElementById('destination-name').innerText = place.place_name;
+                document.getElementById('destination-selected').style.display = 'flex';
+                addMarker(place.center, 'destination');
+                
+                // Show heat circles for matching cameras
+                showDestinationHeatByKeyword(place.place_name);
+            }
+
+            document.getElementById(`${type}-suggestions`).style.display = 'none';
+            map.flyTo({ center: place.center, zoom: 12, essential: true });
+            updateFindRoutes();
+        }
+
+        function addMarker(coord, type) {
+            const color = type === 'origin' ? '#10b981' : '#ef4444';
+            const marker = new mapboxgl.Marker({ color })
+                .setLngLat(coord)
+                .addTo(map);
+            markers.push(marker);
+        }
+
+        function clearMarkers() {
+            markers.forEach(m => m.remove());
+            markers = [];
+        }
+
+        function updateFindRoutes() {
+            document.getElementById('find-routes').disabled = !(origin && destination);
+        }
+
+        function closeRoutes() {
+            document.getElementById('routes-container').style.display = 'none';
+            // Clear routes from map
+            if (map.getLayer('routes-layer')) map.removeLayer('routes-layer');
+            if (map.getSource('routes')) map.removeSource('routes');
+            routes = [];
+        }
+
+        function closeNavigation() {
+            document.getElementById('navigation-panel').classList.remove('active');
+            navigationActive = false;
+        }
+
+        function toggleSidebar() {
+            sidebarMinimized = !sidebarMinimized;
+            document.getElementById('sidebar').classList.toggle('minimized', sidebarMinimized);
+            const icon = document.querySelector('.sidebar-toggle i');
+            if (sidebarMinimized) {
+                icon.className = 'fas fa-chevron-right';
+            } else {
+                icon.className = 'fas fa-chevron-left';
+            }
+        }
+
+        // Use Current Location
+        function useCurrentLocation() {
+            if (!navigator.geolocation) {
+                alert('आपका ब्राउज़र जियोलोकेशन सपोर्ट नहीं करता');
+                return;
+            }
+
+            showLoading();
+
+            navigator.geolocation.getCurrentPosition(
+                position => {
+                    const { longitude, latitude } = position.coords;
+                    
+                    // Reverse geocode to get address
+                    fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=${MAPBOX_TOKEN}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.features && data.features[0]) {
+                                origin = {
+                                    name: data.features[0].place_name,
+                                    coordinates: [longitude, latitude]
+                                };
+                                
+                                document.getElementById('origin-search').value = data.features[0].text || 'मेरी लोकेशन';
+                                document.getElementById('origin-name').innerText = data.features[0].place_name;
+                                document.getElementById('origin-selected').style.display = 'flex';
+                                addMarker([longitude, latitude], 'origin');
+                                map.flyTo({ center: [longitude, latitude], zoom: 14 });
+                                updateFindRoutes();
+                            }
+                        })
+                        .finally(() => hideLoading());
+                },
+                error => {
+                    console.error('Location error:', error);
+                    alert('लोकेशन प्राप्त नहीं हो सकी');
+                    hideLoading();
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        }
+
+        // Live Tracking Functions
+        function toggleTracking() {
+            if (isTracking) {
+                stopTracking();
+            } else {
+                startTracking();
+            }
+        }
+
+        function startTracking() {
+            if (!navigator.geolocation) {
+                alert('जियोलोकेशन सपोर्ट नहीं है');
+                return;
+            }
+
+            const btn = document.getElementById('toggleTracking');
+            const bar = document.getElementById('liveTrackingBar');
+            
+            btn.innerHTML = '<i class="fas fa-stop"></i> बंद करें';
+            btn.classList.add('active');
+            bar.classList.add('active');
+            document.getElementById('trackingStatus').innerText = 'ट्रैकिंग चालू';
+            isTracking = true;
+
+            // Get initial position
+            navigator.geolocation.getCurrentPosition(
+                position => {
+                    updateUserPosition(position);
+                },
+                error => console.error('Initial position error:', error),
+                { enableHighAccuracy: true }
+            );
+
+            // Watch position continuously (updates every 5 seconds)
+            watchId = navigator.geolocation.watchPosition(
+                position => updateUserPosition(position),
+                error => console.error('Tracking error:', error),
+                {
+                    enableHighAccuracy: true,
+                    maximumAge: 0,
+                    timeout: 5000
+                }
+            );
+        }
+
+        function stopTracking() {
+            if (watchId) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+            }
+
+            if (userMarker) {
+                userMarker.remove();
+                userMarker = null;
+            }
+
+            const btn = document.getElementById('toggleTracking');
+            const bar = document.getElementById('liveTrackingBar');
+            
+            btn.innerHTML = '<i class="fas fa-play"></i> शुरू करें';
+            btn.classList.remove('active');
+            bar.classList.remove('active');
+            document.getElementById('trackingStatus').innerText = 'ट्रैकिंग बंद';
+            document.getElementById('liveSpeed').innerHTML = '0 <small>km/h</small>';
+            isTracking = false;
+        }
+
+        function updateUserPosition(position) {
+            const { latitude, longitude, speed, heading } = position.coords;
+            lastKnownPosition = [longitude, latitude];
+            
+            // Update speed
+            if (speed !== null) {
+                currentSpeed = Math.round(speed * 3.6); // Convert m/s to km/h
+                document.getElementById('liveSpeed').innerHTML = `${currentSpeed} <small>km/h</small>`;
+            }
+
+            // Update or create user marker
+            if (userMarker) {
+                userMarker.remove();
+            }
+
+            // Create custom user marker with direction
+            const el = document.createElement('div');
+            el.className = 'user-marker';
+            
+            if (heading !== null) {
+                const direction = document.createElement('div');
+                direction.className = 'user-direction';
+                direction.style.transform = `translateX(-50%) rotate(${heading}deg)`;
+                el.appendChild(direction);
+            }
+
+            userMarker = new mapboxgl.Marker(el)
+                .setLngLat([longitude, latitude])
+                .addTo(map);
+
+            // Check geofence if active
+            if (isGeofenceActive && currentRoute) {
+                checkGeofence([longitude, latitude]);
+            }
+
+            // Update navigation panel if active
+            if (navigationActive && currentRoute) {
+                updateNavigationProgress([longitude, latitude]);
+            }
+        }
+
+        function centerOnUser() {
+            if (lastKnownPosition) {
+                map.flyTo({ center: lastKnownPosition, zoom: 15, essential: true });
+            }
+        }
+
+        // Geofence Functions - Purple Theme
+        function toggleGeofence() {
+            const btn = document.getElementById('geofenceBtn');
+            
+            if (!isGeofenceActive) {
+                // Activate geofence
+                btn.innerHTML = '<i class="fas fa-shield-alt"></i> जियोफेंस सक्रिय ✓';
+                btn.classList.add('active', 'protected');
+                isGeofenceActive = true;
+                
+                // If a route is selected, create geofence corridor
+                if (currentRoute) {
+                    createGeofenceCorridor(currentRoute);
+                }
+                
+                // Show success message
+                showGeofenceAlert('✅ जियोफेंस सक्रिय - सुरक्षित मार्ग', '#8b5cf6');
+            } else {
+                // Deactivate geofence
+                btn.innerHTML = '<i class="fas fa-shield-alt"></i> जियोफेंस सुरक्षा सक्रिय करें';
+                btn.classList.remove('active', 'protected');
+                isGeofenceActive = false;
+                
+                // Remove geofence layers
+                if (map.getLayer('geofence-fill')) map.removeLayer('geofence-fill');
+                if (map.getLayer('geofence-border')) map.removeLayer('geofence-border');
+                if (map.getSource('geofence')) map.removeSource('geofence');
+                geofenceLayer = null;
+            }
+        }
+
+        function createGeofenceCorridor(route) {
+            if (!route || !route.geometry) return;
+            
+            // Remove existing geofence layers
+            if (map.getLayer('geofence-fill')) map.removeLayer('geofence-fill');
+            if (map.getLayer('geofence-border')) map.removeLayer('geofence-border');
+            if (map.getSource('geofence')) map.removeSource('geofence');
+
+            // Create a buffer around the route (closer to route - 1km)
+            const coordinates = route.geometry.coordinates;
+            const bufferPoints = [];
+            
+            // Create a narrow corridor by adding offset points (0.01 degrees ≈ 1km)
+            coordinates.forEach(coord => {
+                bufferPoints.push([coord[0] + 0.008, coord[1] + 0.008]);
+            });
+            
+            // Add points in reverse order with negative offset
+            coordinates.slice().reverse().forEach(coord => {
+                bufferPoints.push([coord[0] - 0.008, coord[1] - 0.008]);
+            });
+
+            // Add the first point again to close the polygon
+            if (coordinates.length > 0) {
+                bufferPoints.push([coordinates[0][0] + 0.008, coordinates[0][1] + 0.008]);
+            }
+
+            map.addSource('geofence', {
+                type: 'geojson',
+                data: {
+                    type: 'Feature',
+                    geometry: {
+                        type: 'Polygon',
+                        coordinates: [bufferPoints]
+                    }
+                }
+            });
+
+            map.addLayer({
+                id: 'geofence-fill',
+                type: 'fill',
+                source: 'geofence',
+                paint: {
+                    'fill-color': '#8b5cf6',
+                    'fill-opacity': 0.15
+                }
+            });
+
+            map.addLayer({
+                id: 'geofence-border',
+                type: 'line',
+                source: 'geofence',
+                paint: {
+                    'line-color': '#8b5cf6',
+                    'line-width': 3,
+                    'line-dasharray': [4, 3]
+                }
+            });
+
+            geofenceLayer = 'geofence';
+        }
+
+        function checkGeofence(userLocation) {
+            if (!geofenceLayer || !currentRoute) return;
+
+            // Simple point-in-polygon check
+            const routeCoords = currentRoute.geometry.coordinates;
+            let minDistance = Infinity;
+
+            routeCoords.forEach(coord => {
+                const dist = Math.sqrt(
+                    Math.pow(userLocation[0] - coord[0], 2) +
+                    Math.pow(userLocation[1] - coord[1], 2)
+                );
+                minDistance = Math.min(minDistance, dist);
+            });
+
+            // Check if user is within 1.5km of the route (tighter corridor)
+            const isInCorridor = minDistance <= 0.015; // ~1.5km
+
+            if (!isInCorridor) {
+                showGeofenceAlert('⚠️ सावधान! आप सुरक्षित मार्ग से बाहर जा रहे हैं', '#8b5cf6');
+                
+                // Flash border red temporarily
+                if (map.getLayer('geofence-border')) {
+                    map.setPaintProperty('geofence-border', 'line-color', '#ef4444');
+                    setTimeout(() => {
+                        if (isGeofenceActive) {
+                            map.setPaintProperty('geofence-border', 'line-color', '#8b5cf6');
+                        }
+                    }, 3000);
+                }
+            }
+        }
+
+        function showGeofenceAlert(message, color) {
+            const alert = document.getElementById('geofence-alert');
+            document.getElementById('alertMessage').innerText = message;
+            alert.style.background = `linear-gradient(135deg, ${color}, ${color}dd)`;
+            alert.style.display = 'flex';
+
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 5000);
+        }
+
+        // Find Routes
+        async function findRoutes() {
+            if (!origin || !destination) return;
+            
+            showLoading();
+            
+            try {
+                const originCoords = `${origin.coordinates[0]},${origin.coordinates[1]}`;
+                const destCoords = `${destination.coordinates[0]},${destination.coordinates[1]}`;
+                
+                const url = `https://api.mapbox.com/directions/v5/mapbox/driving-traffic/${originCoords};${destCoords}?alternatives=true&geometries=geojson&overview=full&steps=true&access_token=${MAPBOX_TOKEN}`;
+                
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.routes && data.routes.length > 0) {
+                    routes = data.routes.map((r, i) => ({
+                        index: i,
+                        distance: (r.distance / 1000).toFixed(1),
+                        duration: Math.round(r.duration / 60),
+                        geometry: r.geometry,
+                        legs: r.legs
+                    }));
+
+                    // Sort routes by duration (fastest first)
+                    routes.sort((a, b) => a.duration - b.duration);
+                    
+                    // Set current route to fastest
+                    currentRoute = routes[0];
+                    
+                    displayRoutes();
+                    displayRoutesOnMap();
+                    fitBoundsToRoutes();
+                    document.getElementById('routes-container').style.display = 'block';
+                    
+                    // Create geofence if active
+                    if (isGeofenceActive) {
+                        createGeofenceCorridor(currentRoute);
+                    }
+                } else {
+                    alert('कोई रास्ता नहीं मिला');
+                }
+            } catch (error) {
+                console.error('Route error:', error);
+                alert('रूट ढूंढने में त्रुटि: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function displayRoutes() {
+            const list = document.getElementById('routes-list');
+            list.innerHTML = '';
+
+            routes.forEach((r, i) => {
+                const crowd = getRouteCrowdLevel(r);
+                const isProtected = isGeofenceActive && i === 0;
+                
+                const card = document.createElement('div');
+                card.className = `route-card ${i === selectedRouteIndex ? 'selected' : ''} ${isProtected ? 'protected' : ''}`;
+                
+                if (isProtected) {
+                    card.innerHTML += `
+                        <div class="protected-badge">
+                            <i class="fas fa-shield-alt"></i> सुरक्षित मार्ग
+                        </div>
+                    `;
+                }
+                
+                // Get route summary
+                const summary = r.legs && r.legs[0] ? r.legs[0].summary || '' : '';
+                
+                card.innerHTML += `
+                    <div class="route-header">
+                        <span class="route-name">रास्ता ${i + 1} ${i === 0 ? '★' : ''}</span>
+                        <span class="route-distance">${r.distance} km</span>
+                    </div>
+                    <div class="route-time">
+                        <i class="fas fa-clock"></i> ${formatTime(r.duration)}
+                    </div>
+                    <div class="route-description">${summary || generateRouteDescription(r)}</div>
+                    <div class="route-crowd-indicator" style="background:${crowd.color}20; border-left:3px solid ${crowd.color};">
+                        <i class="fas ${crowd.level === 'high' ? 'fa-exclamation-triangle' : crowd.level === 'medium' ? 'fa-exclamation-circle' : 'fa-check-circle'}" style="color:${crowd.color};"></i>
+                        <span style="color:${crowd.color};">${crowd.label}</span>
+                    </div>
+                `;
+                
+                card.onclick = () => selectRoute(i);
+                list.appendChild(card);
+            });
+
+            selectRoute(0);
+        }
+
+        function generateRouteDescription(r) {
+            if (r.legs && r.legs[0] && r.legs[0].steps) {
+                const steps = r.legs[0].steps;
+                const roads = steps
+                    .map(s => s.name)
+                    .filter(n => n && n !== '' && n !== '无名道路')
+                    .filter((v, i, a) => a.indexOf(v) === i)
+                    .slice(0, 2);
+                return roads.length ? 'Via ' + roads.join(' → ') : 'सीधा मार्ग';
+            }
+            return 'सीधा मार्ग';
+        }
+
+        function formatTime(minutes) {
+            if (minutes < 60) return minutes + ' मिनट';
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            return hours + ' घंटा ' + (mins > 0 ? mins + ' मिनट' : '');
+        }
+
+        function getRouteCrowdLevel(route) {
+            // Estimate crowd based on camera data near the route
+            let totalRemaining = 0;
+            let cameraCount = 0;
+
+            if (cameraData.length > 0) {
+                const sampleSize = Math.min(3, cameraData.length);
+                for (let i = 0; i < sampleSize; i++) {
+                    const cam = cameraData[Math.floor(Math.random() * cameraData.length)];
+                    totalRemaining += cam.remainingCount || 0;
+                    cameraCount++;
+                }
+            }
+
+            if (totalRemaining > 500) return { level: 'high', label: 'उच्च भीड़', color: '#ef4444' };
+            if (totalRemaining > 200) return { level: 'medium', label: 'मध्यम भीड़', color: '#f9a61a' };
+            return { level: 'low', label: 'कम भीड़', color: '#10b981' };
+        }
+
+        function selectRoute(idx) {
+            selectedRouteIndex = idx;
+            currentRoute = routes[idx];
+            
+            document.querySelectorAll('.route-card').forEach((c, i) => {
+                if (i === idx) c.classList.add('selected');
+                else c.classList.remove('selected');
+            });
+            
+            displayRoutesOnMap();
+            
+            // Update geofence if active
+            if (isGeofenceActive) {
+                createGeofenceCorridor(currentRoute);
+            }
+        }
+
+        function displayRoutesOnMap() {
+            if (!routes.length) return;
+            
+            try {
+                // Update the routes source
+                const features = routes.map((r, i) => ({
+                    type: 'Feature',
+                    properties: {
+                        color: i === selectedRouteIndex ? (isGeofenceActive ? '#8b5cf6' : '#1e3c72') : '#94a3b8',
+                        width: i === selectedRouteIndex ? 8 : 4
+                    },
+                    geometry: r.geometry
+                }));
+
+                map.getSource('routes').setData({
+                    type: 'FeatureCollection',
+                    features: features
+                });
+
+                // Ensure layer exists
+                if (!map.getLayer('routes-layer')) {
+                    map.addLayer({
+                        id: 'routes-layer',
+                        type: 'line',
+                        source: 'routes',
+                        layout: {
+                            'line-join': 'round',
+                            'line-cap': 'round'
+                        },
+                        paint: {
+                            'line-color': ['get', 'color'],
+                            'line-width': ['get', 'width'],
+                            'line-opacity': 0.9,
+                            'line-blur': 1
+                        }
+                    });
+                }
+
+                // Add glow effect for protected route
+                if (isGeofenceActive && selectedRouteIndex === 0) {
+                    // Add a second layer for glow effect
+                    if (map.getLayer('route-glow')) map.removeLayer('route-glow');
+                    
+                    map.addLayer({
+                        id: 'route-glow',
+                        type: 'line',
+                        source: 'routes',
+                        layout: {
+                            'line-join': 'round',
+                            'line-cap': 'round'
+                        },
+                        paint: {
+                            'line-color': '#8b5cf6',
+                            'line-width': 12,
+                            'line-opacity': 0.3,
+                            'line-blur': 5
+                        },
+                        filter: ['==', ['get', 'color'], '#8b5cf6']
+                    });
+                } else {
+                    if (map.getLayer('route-glow')) map.removeLayer('route-glow');
+                }
+            } catch (error) {
+                console.error('Error displaying routes on map:', error);
+            }
+        }
+
+        function fitBoundsToRoutes() {
+            if (!routes.length) return;
+
+            try {
+                const bounds = new mapboxgl.LngLatBounds();
+                routes.forEach(r => {
+                    if (r.geometry && r.geometry.coordinates) {
+                        r.geometry.coordinates.forEach(c => bounds.extend(c));
+                    }
+                });
+                map.fitBounds(bounds, { 
+                    padding: 50, 
+                    duration: 1000, 
+                    essential: true,
+                    maxZoom: 12
+                });
+            } catch (error) {
+                console.error('Error fitting bounds:', error);
+            }
+        }
+
+        function updateNavigationProgress(currentPos) {
+            if (!currentRoute || !currentRoute.legs || !currentRoute.legs[0]) return;
+            
+            // Calculate remaining distance
+            const routeCoords = currentRoute.geometry.coordinates;
+            let minDist = Infinity;
+            let nearestIndex = 0;
+
+            routeCoords.forEach((coord, i) => {
+                const dist = Math.sqrt(
+                    Math.pow(currentPos[0] - coord[0], 2) +
+                    Math.pow(currentPos[1] - coord[1], 2)
+                );
+                if (dist < minDist) {
+                    minDist = dist;
+                    nearestIndex = i;
+                }
+            });
+
+            // Calculate remaining distance and time
+            const remainingCoords = routeCoords.slice(nearestIndex);
+            let remainingDistance = 0;
+            for (let i = 0; i < remainingCoords.length - 1; i++) {
+                const dist = Math.sqrt(
+                    Math.pow(remainingCoords[i+1][0] - remainingCoords[i][0], 2) +
+                    Math.pow(remainingCoords[i+1][1] - remainingCoords[i][1], 2)
+                );
+                remainingDistance += dist * 111; // Rough conversion to km
+            }
+
+            const remainingTime = (remainingDistance / (currentSpeed || 30)) * 60; // minutes
+
+            // Update navigation panel
+            document.getElementById('navDistance').innerText = remainingDistance.toFixed(1);
+            document.getElementById('navTime').innerText = Math.round(remainingTime);
+
+            // Calculate ETA
+            const now = new Date();
+            const eta = new Date(now.getTime() + remainingTime * 60000);
+            document.getElementById('navEta').innerText = eta.toLocaleTimeString('hi-IN', { hour: '2-digit', minute: '2-digit' });
+
+            // Start navigation panel if not active
+            if (!navigationActive && remainingDistance > 0.1) {
+                document.getElementById('navigation-panel').classList.add('active');
+                navigationActive = true;
+                showInstructions(currentRoute);
+            }
+        }
+
+        function showInstructions(route) {
+            if (!route.legs || !route.legs[0] || !route.legs[0].steps) return;
+
+            const instructions = document.getElementById('instructionList');
+            const steps = route.legs[0].steps;
+
+            instructions.innerHTML = steps.map(step => {
+                const icon = getManeuverIcon(step.maneuver);
+                const distance = (step.distance / 1000).toFixed(2);
+                return `
+                    <div class="instruction-item">
+                        <div class="instruction-icon">
+                            <i class="fas fa-${icon}"></i>
+                        </div>
+                        <div class="instruction-text">${step.maneuver.instruction || 'आगे बढ़ें'}</div>
+                        <div class="instruction-distance">${distance} km</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getManeuverIcon(maneuver) {
+            if (!maneuver) return 'arrow-right';
+            
+            const type = maneuver.type || '';
+            if (type.includes('turn')) return 'turn-right';
+            if (type.includes('roundabout')) return 'redo';
+            if (type.includes('merge')) return 'code-branch';
+            if (type.includes('arrive')) return 'flag-checkered';
+            return 'arrow-right';
+        }
+
+        function showLoading() {
+            document.getElementById('loading-overlay').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading-overlay').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
